@@ -1,0 +1,905 @@
+/* ============================================================
+   TRÌNH ĐỌC SÁCH CHUYÊN NGHIỆP (E-READER INTERFACE)
+   Hỗ trợ Themes (Sáng / Giấy cổ Sepia / Tối), Cỡ chữ, Phông chữ,
+   Lưu tiến độ đọc dở và Phím tắt điều hướng.
+   ============================================================ */
+
+/* ---------- BIẾN MÀU SẮC THEO TỪNG THEME ---------- */
+
+/* 1. Theme Sáng (Light) */
+.reader-page.theme-light {
+  --r-bg: #f1f5f9;
+  --r-card-bg: #ffffff;
+  --r-card-border: #e2e8f0;
+  --r-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --r-text: #1e293b;
+  --r-text-muted: #64748b;
+  --r-text-subtle: #94a3b8;
+  --r-topbar-bg: rgba(255, 255, 255, 0.94);
+  --r-topbar-border: #e2e8f0;
+  --r-accent: #009fff;
+  --r-accent-hover: #0084d6;
+  --r-accent-light: #e0f2fe;
+  --r-progress: #009fff;
+  --r-btn-bg: #f8fafc;
+  --r-btn-border: #cbd5e1;
+  --r-popover-bg: #ffffff;
+  --r-popover-border: #e2e8f0;
+}
+
+/* 2. Theme Giấy cổ (Sepia / Warm) - Bảo vệ mắt */
+.reader-page.theme-sepia {
+  --r-bg: #eee4ce;
+  --r-card-bg: #fbf0d9;
+  --r-card-border: #e2d2b4;
+  --r-card-shadow: 0 4px 20px rgba(92, 64, 30, 0.08);
+  --r-text: #3c2f1f;
+  --r-text-muted: #78644e;
+  --r-text-subtle: #9c856e;
+  --r-topbar-bg: rgba(244, 234, 212, 0.95);
+  --r-topbar-border: #decba9;
+  --r-accent: #b45309;
+  --r-accent-hover: #92400e;
+  --r-accent-light: #fde68a;
+  --r-progress: #d97706;
+  --r-btn-bg: #f5e7cb;
+  --r-btn-border: #dfceab;
+  --r-popover-bg: #faf0d8;
+  --r-popover-border: #decba9;
+}
+
+/* 3. Theme Tối (Dark / Night Mode) - Chống chói ban đêm */
+.reader-page.theme-dark {
+  --r-bg: #0f1115;
+  --r-card-bg: #181b20;
+  --r-card-border: #282c34;
+  --r-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --r-text: #e2e8f0;
+  --r-text-muted: #94a3b8;
+  --r-text-subtle: #64748b;
+  --r-topbar-bg: rgba(24, 27, 32, 0.95);
+  --r-topbar-border: #282c34;
+  --r-accent: #38bdf8;
+  --r-accent-hover: #0ea5e9;
+  --r-accent-light: #0369a1;
+  --r-progress: #38bdf8;
+  --r-btn-bg: #22262e;
+  --r-btn-border: #333842;
+  --r-popover-bg: #1c2027;
+  --r-popover-border: #333842;
+}
+
+/* ---------- BỐ CỤC CHUNG ---------- */
+
+.reader-page {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background-color: var(--r-bg);
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  color: var(--r-text);
+}
+
+.reader-main {
+  margin-top: 0;
+  margin-left: 120px;
+  width: calc(100% - 120px);
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================================
+   THANH CÔNG CỤ TRÊN CÙNG (TOPBAR)
+   ============================================================ */
+
+.reader-tophar {
+  width: 100%;
+  height: 64px;
+  background: var(--r-topbar-bg);
+  border-bottom: 1px solid var(--r-topbar-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 28px;
+  z-index: 50;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.tophar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tophar-left .title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tophar-left .title h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--r-text);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tophar-left .title .author-name {
+  font-size: 13.5px;
+  color: var(--r-text-muted);
+  font-weight: 500;
+}
+
+.tophar-right ul {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--r-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 17px;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: var(--r-btn-bg);
+  color: var(--r-accent);
+  border-color: var(--r-btn-border);
+}
+
+.btn-icon.active {
+  background: var(--r-accent-light);
+  color: var(--r-accent);
+  border-color: var(--r-accent);
+}
+
+.btn-icon.saved {
+  color: #f59e0b;
+}
+
+.font-icon {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  font-family: serif;
+}
+
+/* ---------- THANH TIẾN ĐỘ ĐỌC SÁCH ---------- */
+
+.reading-progress-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.reading-progress-bar {
+  height: 100%;
+  background: var(--r-progress);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   KHU VỰC ĐỌC SÁCH (READER CONTENT)
+   ============================================================ */
+
+.reader-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.book-page {
+  background-color: var(--r-card-bg);
+  border: 1px solid var(--r-card-border);
+  box-shadow: var(--r-card-shadow);
+  border-radius: 16px;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  padding: 44px 56px 36px 56px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, max-width 0.25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--r-card-border) transparent;
+}
+
+/* Các tùy chọn độ rộng trang đọc */
+.book-page.width-narrow {
+  max-width: 760px;
+}
+
+.book-page.width-normal {
+  max-width: 920px;
+}
+
+.book-page.width-wide {
+  max-width: 1160px;
+}
+
+/* Thanh cuộn trang đọc */
+.book-page::-webkit-scrollbar {
+  width: 6px;
+}
+
+.book-page::-webkit-scrollbar-thumb {
+  background-color: var(--r-card-border);
+  border-radius: 10px;
+}
+
+.book-page::-webkit-scrollbar-thumb:hover {
+  background-color: var(--r-accent);
+}
+
+/* Tiêu đề chương/sách trong trang */
+.chapter-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--r-card-border);
+}
+
+.chapter-book-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--r-text);
+  margin-bottom: 6px;
+}
+
+.chapter-author {
+  font-size: 14px;
+  color: var(--r-text-muted);
+  margin: 0;
+}
+
+/* Nội dung trang sách */
+.chapter-body {
+  flex: 1;
+  color: var(--r-text);
+  text-align: justify;
+}
+
+.converted-content {
+  width: 100%;
+}
+
+.converted-content .page {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.converted-content .page.active {
+  display: block;
+  opacity: 1;
+  animation: pageFadeIn 0.3s ease;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.converted-content.raw-html {
+  line-height: inherit;
+}
+
+.reader-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  gap: 12px;
+  color: var(--r-text-muted);
+}
+
+/* ============================================================
+   ĐIỀU HƯỚNG TRANG DƯỚI CÙNG (CHAPTER FOOTER)
+   ============================================================ */
+
+.chapter-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--r-card-border);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--r-btn-bg);
+  border: 1px solid var(--r-btn-border);
+  color: var(--r-text);
+  border-radius: 10px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--r-accent);
+  color: #ffffff;
+  border-color: var(--r-accent);
+  transform: translateY(-1px);
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--r-text-muted);
+  background: var(--r-btn-bg);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--r-btn-border);
+}
+
+.percent-badge {
+  color: var(--r-accent);
+  margin-left: 4px;
+}
+
+/* ============================================================
+   POPOVER TÙY BIẾN GIAO DIỆN (READER SETTINGS)
+   ============================================================ */
+
+.settings-item {
+  position: relative;
+}
+
+.reader-settings-popover {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 320px;
+  background: var(--r-popover-bg);
+  border: 1px solid var(--r-popover-border);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  z-index: 100;
+  animation: popoverFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes popoverFade {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--r-popover-border);
+}
+
+.settings-header h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--r-text);
+  margin: 0;
+}
+
+.settings-header .close-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: var(--r-text-muted);
+  cursor: pointer;
+}
+
+.settings-body {
+  padding: 16px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--r-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* 3 Nút chọn Theme màu sắc */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.theme-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  border: 1.5px solid var(--r-btn-border);
+  background: var(--r-btn-bg);
+  color: var(--r-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-btn:hover {
+  border-color: var(--r-accent);
+}
+
+.theme-btn.selected {
+  border-color: var(--r-accent);
+  background: var(--r-accent-light);
+  color: var(--r-accent);
+  box-shadow: 0 0 0 2px var(--r-accent);
+}
+
+.swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: block;
+}
+
+.swatch.light {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.swatch.sepia {
+  background: #fbf0d9;
+  border: 1px solid #d8caa7;
+}
+
+.swatch.dark {
+  background: #181b20;
+  border: 1px solid #333842;
+}
+
+/* Điều khiển Cỡ chữ */
+.font-size-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--r-btn-bg);
+  border: 1px solid var(--r-btn-border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.size-btn {
+  background: transparent;
+  border: none;
+  width: 38px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--r-text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.size-btn:hover:not(:disabled) {
+  background: var(--r-accent);
+  color: #ffffff;
+}
+
+.size-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.current-size {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--r-accent);
+}
+
+/* Kiểu chữ & Giãn dòng & Độ rộng */
+.font-family-options,
+.line-height-options,
+.width-options {
+  display: flex;
+  gap: 6px;
+}
+
+.font-btn,
+.lh-btn,
+.width-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--r-btn-border);
+  background: var(--r-btn-bg);
+  color: var(--r-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.font-btn:hover,
+.lh-btn:hover,
+.width-btn:hover {
+  border-color: var(--r-accent);
+}
+
+.font-btn.selected,
+.lh-btn.selected,
+.width-btn.selected {
+  border-color: var(--r-accent);
+  background: var(--r-accent-light);
+  color: var(--r-accent);
+  font-weight: 700;
+}
+
+/* ============================================================
+   TOAST THÔNG BÁO VỊ TRÍ ĐỌC DỞ
+   ============================================================ */
+
+.resume-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: var(--r-card-bg);
+  border: 1px solid var(--r-card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 1000;
+  animation: toastSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--r-accent-light);
+  color: var(--r-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.toast-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--r-text);
+  margin: 0;
+}
+
+.toast-desc {
+  font-size: 12.5px;
+  color: var(--r-text-muted);
+  margin: 0;
+}
+
+.toast-restart-btn {
+  background: var(--r-btn-bg);
+  border: 1px solid var(--r-btn-border);
+  color: var(--r-text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.toast-restart-btn:hover {
+  background: var(--r-accent);
+  color: #ffffff;
+  border-color: var(--r-accent);
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: var(--r-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ============================================================
+   DANH SÁCH CHƯƠNG (CHAPTER LIST DRAWER)
+   ============================================================ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 90;
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.chapter-list {
+  position: fixed;
+  top: 0;
+  right: -380px;
+  width: 380px;
+  height: 100%;
+  background: var(--r-card-bg);
+  border-left: 1px solid var(--r-card-border);
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.15);
+  transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-list.active {
+  right: 0;
+}
+
+.chapter-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--r-card-border);
+}
+
+.chapter-list-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--r-text);
+  margin: 0;
+}
+
+.chapter-list-header button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--r-text-muted);
+}
+
+.chapter-items {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.chapter-items li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--r-text);
+  margin-bottom: 4px;
+}
+
+.chapter-items li:hover {
+  background: var(--r-btn-bg);
+  color: var(--r-accent);
+}
+
+.chapter-items li.active {
+  background: var(--r-accent-light);
+  color: var(--r-accent);
+  font-weight: 700;
+}
+
+.chapter-page {
+  font-size: 12.5px;
+  color: var(--r-text-muted);
+}
+
+/* ============================================================
+   RESPONSIVE (DESKTOP, TABLET, MOBILE)
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .reader-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .reader-page .Header {
+    display: none; /* Ẩn sidebar trên tablet/mobile để tập trung đọc */
+  }
+
+  .book-page {
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .reader-tophar {
+    padding: 0 16px;
+  }
+
+  .reader-content {
+    padding: 12px 10px;
+  }
+
+  .book-page {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+
+  .chapter-book-title {
+    font-size: 19px;
+  }
+
+  .reader-settings-popover {
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100vw - 32px);
+    max-width: 360px;
+  }
+
+  .nav-btn .nav-label {
+    display: none; /* Ẩn chữ trên nút chuyển trang mobile */
+  }
+
+  .chapter-list {
+    width: 100%;
+    right: -100%;
+  }
+}
+
+.reader-main, .reader-content, .book-page { min-height: 0; min-width: 0; }
+.reading-tools-hint { margin-top: 18px; color: var(--r-text-muted); font-size: 12px; }
+.narration-player { margin: 16px 0 24px; padding: 14px; border: 1px solid var(--r-btn-border); border-radius: 12px; background: var(--r-btn-bg); font: 14px/1.6 system-ui, sans-serif; }
+.narration-player summary { cursor: pointer; font-weight: 600; }
+.narration-settings { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.narration-settings label { display: flex; flex-direction: column; gap: 5px; min-width: 0; max-width: 100%; }
+.narration-settings select { max-width: 100%; padding: 7px; border: 1px solid var(--r-btn-border); border-radius: 8px; color: var(--r-text); background: var(--r-card-bg); }
+.narration-settings .narration-continuous { flex-direction: row; align-items: center; }
+.narration-player p { font-size: 12px; color: var(--r-text-muted); margin-top: 8px; }
+.reading-mark { color: inherit; border-radius: 3px; box-decoration-break: clone; }
+.reading-mark.yellow { background: #facc1566; }
+.reading-mark.green { background: #4ade8066; }
+.reading-mark.pink { background: #f472b666; }
+.selection-tools, .reading-notes { margin-top: 20px; padding: 16px; border: 1px solid var(--r-card-border); background: var(--r-btn-bg); border-radius: 12px; font: 14px/1.6 system-ui, sans-serif; }
+.reading-notes summary { cursor: pointer; font-weight: 600; }
+.reading-notes article { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--r-card-border); }
+.selection-tools blockquote, .reading-notes blockquote { border-left: 3px solid var(--r-accent); margin: 12px 0; padding-left: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.selection-tools textarea, .reading-notes textarea { display: block; width: 100%; margin: 8px 0; resize: vertical; padding: 10px; background: var(--r-card-bg); color: var(--r-text); border: 1px solid var(--r-btn-border); border-radius: 8px; font: inherit; }
+.reading-tool-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.reading-tool-actions button, .reading-notes button, .selection-tools select { border: 1px solid var(--r-btn-border); background: var(--r-card-bg); color: var(--r-text); padding: 7px 10px; border-radius: 8px; font: 13px system-ui, sans-serif; cursor: pointer; }
+.reading-notes button { margin: 3px; }
+.note-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.reader-sync, .reader-notice {
+  padding: 6px 20px;
+  color: var(--r-text-muted);
+  background: var(--r-topbar-bg);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.reader-notice { color: var(--r-text); }
+.reader-sync button {
+  margin-left: 10px;
+  color: var(--r-accent);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.chapter-items li { padding: 0; }
+.chapter-items button {
+  width: 100%; padding: 14px 16px; text-align: left; border: 0;
+  border-radius: 10px; background: transparent; color: inherit; cursor: pointer;
+}
+.reader-page button:focus-visible, .reader-page a:focus-visible { outline: 2px solid var(--r-accent); outline-offset: 3px; }
+.reader-page button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .reader-tophar { gap: 6px; padding: 0 8px; }
+  .tophar-left { flex: 1; gap: 4px; }
+  .tophar-left .author-name { display: none; }
+  .tophar-left .title h2 { font-size: 14px; }
+  .tophar-right { flex-shrink: 0; }
+  .tophar-right ul { gap: 2px; }
+  .reader-tophar .btn-icon { width: 34px; height: 38px; }
+  .reader-settings-popover { max-height: calc(100dvh - 100px); overflow-y: auto; }
+  .chapter-footer { gap: 4px; }
+  .page-indicator { padding: 6px; gap: 3px; font-size: 12px; flex-wrap: wrap; justify-content: center; }
+  .resume-toast { left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); padding: 10px; gap: 8px; flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-page, .reader-page * { animation: none; transition: none; scroll-behavior: auto; }
+}

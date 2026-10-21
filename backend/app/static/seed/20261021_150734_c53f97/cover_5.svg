@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="680" viewBox="0 0 480 680">
+<rect width="480" height="680" fill="#A54D67"/><rect x="18" y="18" width="444" height="644" rx="4" fill="none" stroke="#fff" stroke-opacity=".25"/>
+<circle cx="410" cy="70" r="130" fill="#fff" opacity=".08"/><circle cx="80" cy="620" r="160" fill="#fff" opacity=".06"/>
+<path d="M44 125h68m-68 6h38" stroke="#ffdc9e" stroke-width="3"/>
+<text x="44" y="80" font-family="Arial,sans-serif" font-size="17" fill="#ffe8bd" letter-spacing="3">BOOKAPP · 05</text>
+<text font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#fff"><tspan x="44" y="200">Viết để giữ lại</tspan><tspan x="44" y="246">một ngày</tspan></text>
+<path d="M46 465q40-18 80 0v68q-40-18-80 0zm80 0q40-18 80 0v68q-40-18-80 0z" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>
+<text x="44" y="600" font-family="Arial,sans-serif" font-size="20" fill="#fff">BookApp Studio</text>
+<text x="44" y="630" font-family="Arial,sans-serif" font-size="14" fill="#fff" opacity=".7">Sáng tạo · Nội dung mẫu</text></svg>

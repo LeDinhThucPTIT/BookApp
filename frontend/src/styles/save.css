@@ -1,0 +1,71 @@
+.save-text h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--colortext);
+  margin-bottom: 30px;
+}
+.save-container {
+  display: flex;
+  gap: 30px;
+}
+.book-save {
+  position: relative;
+}
+
+.book-save-img {
+  width: 200px;
+  height: 300px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* hover vào cả khung .book-save */
+.book-save:hover .book-save-img {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* trái tim nổi cùng ảnh */
+.book-save-heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  color: var(--colorPrimary);
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.book-save:hover .book-save-heart {
+  transform: translateY(-8px) scale(1.15);
+  color: #ff4b4b; /* đổi sang đỏ khi hover */
+}
+
+.book-save-info {
+  margin-top: 15px;
+  margin-left: 10px;
+}
+.book-save-info h4 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--colortext);
+  margin-bottom: 8px;
+}
+.book-save-info p {
+  font-size: 16px;
+  color: var(--colortext);
+}
+.book-img {
+  position: relative;
+}
+
+.book-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  z-index: 2;
+}

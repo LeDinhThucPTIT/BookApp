@@ -1,0 +1,137 @@
+/* Lịch sử */
+
+.history-text h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--colortext);
+  margin-bottom: 30px;
+}
+
+/* Danh sách lịch sử */
+.history-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 50px;
+}
+
+.book-history {
+  display: flex;
+  align-items: start;
+  gap: 20px;
+}
+
+.book-image img {
+  width: 220px;
+  height: 320px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+}
+
+.book-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
+  margin-left: 50px;
+}
+
+.book-title {
+  margin-top: 15px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--colortext);
+  margin-bottom: 20px;
+}
+
+.book-rating {
+  gap: 20px;
+  display: flex;
+  font-size: 16px;
+  color: var(--colortext);
+}
+
+.book-rating .stars {
+  color: #ffca28;
+}
+
+.book-meta {
+  display: flex;
+  flex-direction: row;
+  gap: 120px;
+  color: var(--colortext);
+  flex-wrap: nowrap;
+  width: calc(100% - 200px);
+  margin-top: 55px;
+  padding-bottom: 10px;
+}
+.meta-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  gap: 8px;
+  min-width: 120px;
+}
+.meta-content .content-1 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--colortext);
+}
+.book-meta .cancel button {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: var(--colortext);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.book-meta .cancel button:hover {
+  color: #ff4d4d;
+}
+/* Nút hành động */
+.book-actions {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  margin-top: 30px;
+}
+
+.read-btn {
+  background-color: #009fff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.read-btn:hover {
+  background-color: #007fd6;
+}
+
+.history-list .book-actions .icons i {
+  font-size: 20px;
+  color: var(--colortext);
+  margin-right: 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.history-list .book-actions .icons i:hover {
+  color: #009fff;
+}
+.last-read-time {
+  margin-top: 50px;
+  font-size: 16px;
+  color: var(--colortext);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.last-read-time .state {
+  font-weight: 600;
+}
+.last-read-time .time {
+  display: flex;
+  gap: 10px;
+}

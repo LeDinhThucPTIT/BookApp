@@ -1,0 +1,65 @@
+/* Theme is owned by the application root, independent of routed pages. */
+.app-theme-toggle { display: inline-grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; color: #181821; cursor: pointer; }
+.app-theme-toggle:focus-visible { outline: 2px solid var(--colorbutton1); outline-offset: 3px; }
+:root[data-theme="dark"] {
+  --colortext: #f1f5f9;
+  --text-color: #f1f5f9;
+  --colorBG: #0f1115;
+  --app-surface: #181b20;
+  --app-border: #343b47;
+  --app-muted: #b6c2d2;
+  color: #f1f5f9;
+  background: #0f1115;
+}
+:root[data-theme="sepia"] { --colorBG: #eee4ce; --colortext: #3c2f1f; --text-color: #3c2f1f; }
+:root[data-theme="dark"] :is(.Body, .Content-right, .Main, .footer, .upload-page, .admin-shell, .admin-content) { background: var(--colorBG); color: var(--colortext); }
+:root[data-theme="dark"] :is(.Header, .Tophar) { background: var(--colorBG); border-color: var(--app-border); }
+:root[data-theme="dark"] :is(.book-detail-content, .comment-section, .inline-comment-card, .comment-item, .comment-popup, .share-popup, .back-button, .story-card, .story-create, .story-chapters, .story-empty, .profile-container, .history-item, .upload-page .container, .history-container) { background: var(--app-surface); color: var(--colortext); border-color: var(--app-border); box-shadow: none; }
+:root[data-theme="dark"] :where(.Body, .upload-page, .admin-shell) :is(h1, h2, h3, h4, label) { color: var(--colortext); }
+:root[data-theme="dark"] :where(.Body, .upload-page) :is(p, .book-meta, .meta-content, .book-author, .book-title, .story-chapter-row > a, .story-card h2 a, .story-create summary, .chapter-page, .book-description__text, .comment-content-text, .comment-author) { color: var(--colortext); }
+:root[data-theme="dark"] :where(.Body, .upload-page) :is(.story-description, .stories-eyebrow, .story-editor-count, .comment-time, .keyboard-tip, .empty-history, .empty-comments, .book-detail-loading, .book-rating, .book-rating span, .footer-column a) { color: var(--app-muted); }
+:root[data-theme="dark"] :where(.Body, .upload-page, .admin-shell) :is(input, textarea, select) { background: #11151c; color: var(--colortext); border-color: #526071; }
+:root[data-theme="dark"] :where(.Body, .upload-page) :is(input, textarea)::placeholder { color: #a0aec0; }
+:root[data-theme="dark"] :is(.app-theme-toggle, .button.language, .stories-main .story-secondary, .story-back-link, .stories-main button:not(.story-primary), .book-actions .icon-btn, .share-popup button, .close-popup-btn) { background: #222833; color: var(--colortext); border-color: var(--app-border); }
+:root[data-theme="dark"] .story-chapter-row:hover { background: #242b36; }
+:root[data-theme="dark"] :is(.story-chapter-row, .story-form-footer, .comment-header-bar, .otp-container) { border-color: var(--app-border); }
+:root[data-theme="dark"] .Header .menu .nav-link .icon-black { display: none; }
+:root[data-theme="dark"] .Header .menu .nav-link .icon-white { display: inline; }
+:root[data-theme="dark"] :is(.Search-button img, .topbar-notify-icon) { filter: brightness(0) invert(1); }
+:root[data-theme="dark"] :is(.Header > .logo img, .footer-logo img) { background: #fff; border-radius: 10px; }
+/* Reader controls must override legacy global label/h2 colors from upload.css. */
+.reader-page :is(label, h1, h2, h3, h4) { color: var(--r-text); }
+.reader-page :is(.btn-icon, .nav-btn, .close-btn, .close-ai-btn) { color: var(--r-text); }
+.reader-page :is(.btn-icon, .nav-btn, .close-btn, .close-ai-btn) i { color: inherit; }
+.reader-page :is(input, textarea, select) { color: var(--r-text); background-color: var(--r-card-bg); border-color: var(--r-btn-border); }
+.reader-page :is(.setting-label, .font-icon, .chapter-name) { color: var(--r-text); }
+.reader-page .theme-btn.selected { color: var(--r-accent); }
+.reader-page .ai-send-btn, .reader-page .generate-summary-btn { color: #fff; }
+.reader-page.theme-dark .Header { background: var(--r-bg); border-color: var(--r-btn-border); }
+.reader-page.theme-dark .Header .menu .nav-link .icon-black { display: none; }
+.reader-page.theme-dark .Header .menu .nav-link .icon-white { display: inline; }
+.login-page { color: #181821; color-scheme: light; }
+.login-page .button.language .text { color: #181821; }
+:root[data-theme="dark"] .story-draft-status { color: var(--app-muted); }
+:root[data-theme="dark"] :is(.stories-success, .stories-error, .story-status, .story-count, .story-step) { background: #223044; color: #e0f2fe; border-color: var(--app-border); }
+:root[data-theme="dark"] .stories-error { background: #45232b; color: #fecdd3; }
+:root[data-theme="dark"] .stories-success { background: #123a30; color: #a7f3d0; }
+:root[data-theme="dark"] :is(.comment-popup-header, .comment-popup-actions, .inline-comment-actions, .comment-modal-backdrop .comment-popup-body) { background: var(--app-surface); color: var(--colortext); border-color: var(--app-border); }
+:root[data-theme="dark"] .book-actions .action-btn { background: #222833; color: var(--colortext); border-color: var(--app-border); }
+:root[data-theme="dark"] .book-actions .action-btn i { color: inherit; }
+:root[data-theme="dark"] .book-actions .action-icon-btn {
+  background: #222833;
+  color: #f1f5f9;
+  border-color: #526071;
+}
+:root[data-theme="dark"] .book-actions .action-icon-btn:hover,
+:root[data-theme="dark"] .book-actions .action-icon-btn[aria-expanded="true"] {
+  background: #18334a;
+  color: #7dd3fc;
+  border-color: #38bdf8;
+}
+:root[data-theme="dark"] .book-actions #favorite-btn[aria-pressed="true"] { background: #40232f; color: #fb7185; border-color: #be526d; }
+:root[data-theme="dark"] .book-actions #save-btn[aria-pressed="true"] { background: #3a301e; color: #fbbf24; border-color: #a17a2c; }
+:root[data-theme="dark"] .share-links :is(a, button) { background: #222833; color: #f1f5f9; border-color: #526071; }
+:root[data-theme="dark"] .share-links :is(a, button):hover { background: #18334a; color: #7dd3fc; }
+.share-links :is(a, button) > i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; width: 20px; height: 20px; line-height: 1; }

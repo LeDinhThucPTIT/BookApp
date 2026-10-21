@@ -1,0 +1,26 @@
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  text-align: initial;
+  border: none;
+}
+
+.reader-page main {
+  width: calc(100% - 120px);
+  margin-left: 120px;
+  height: 100vh;
+}
+
+.comment-popup.open,
+.share-popup.open {
+  display: flex;
+}
+
+.history-container.open {
+  display: block;
+}
+
+.book-save {
+  position: relative;
+}

@@ -1,0 +1,121 @@
+.profile-container {
+  display: flex;
+  justify-content: start;
+  align-items: flex-start;
+  gap: 60px;
+  padding: 40px;
+}
+
+.profile-left {
+  width: 400px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.input-group input,
+.input-group select {
+  padding: 12px 15px;
+  border: 2px solid #000;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.small {
+  flex: 1;
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon i {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #000;
+  font-size: 16px;
+}
+
+.btn {
+  width: 120px;
+  background: var(--colorbutton1);
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: var(--colorbutton2);
+}
+
+.profile-right {
+  margin-left: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+}
+.avatar {
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--colortext);
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.upload {
+  background: linear-gradient(145deg, #ff7a00, #ff9500);
+  color: #fff;
+  border: none;
+  padding: 10px 26px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(255, 122, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* ❌ bỏ fix cứng */
+  position: static; /* hoặc bỏ hẳn dòng position */
+
+  /* ✅ căn giữa khối */
+  margin: 300px auto 0 auto;
+}
+
+.upload:hover {
+  background: linear-gradient(145deg, #ff9a30, #ff7a00);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 122, 0, 0.4);
+}

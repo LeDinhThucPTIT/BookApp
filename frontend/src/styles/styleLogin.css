@@ -1,0 +1,538 @@
+/* ============================================================
+   GIAO DIỆN AUTH: ĐĂNG NHẬP, ĐĂNG KÝ, QUÊN MẬT KHẨU
+   ============================================================ */
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 40px 20px;
+  background-color: #f6f8fb;
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(0, 159, 255, 0.08) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(255, 109, 109, 0.08) 0px, transparent 50%),
+    url(/images/Background/BG.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Lớp phủ mờ nhẹ tinh tế cho background */
+.login-backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.4);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Nút chọn ngôn ngữ */
+.button.language.login-language {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid #009fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Khung bọc card căn giữa cân đối */
+.auth-card-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 460px;
+  margin: auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* Thẻ form chính (Glassmorphism card) */
+.box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 20px;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.05),
+    0 20px 48px -10px rgba(15, 23, 42, 0.1);
+  padding: 36px 32px;
+  box-sizing: border-box;
+  animation: authFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+/* Cho form đăng ký rộng hơn một chút nếu màn hình rộng */
+.register-container.box {
+  max-width: 520px;
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Tiêu đề form */
+.auth-header {
+  margin-bottom: 24px;
+}
+
+.auth-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Các nút mạng xã hội (Google, Facebook) */
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.login-btn {
+  width: 100%;
+  height: 48px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 16px;
+}
+
+.login-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+.login-btn:disabled { cursor: not-allowed; opacity: 0.55; transform: none; box-shadow: none; }
+
+.login-btn .icon.logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Dải ngăn cách "Hoặc" */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+  padding: 0 12px;
+}
+
+/* ============================================================
+   CÁC Ô INPUT (FORM FIELDS)
+   ============================================================ */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  width: 100%;
+}
+
+.input-box label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 15px;
+  color: #0f172a;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Hover & Focus state chuẩn */
+.input-wrapper input:hover {
+  border-color: #94a3b8;
+}
+
+.input-wrapper input:focus {
+  background-color: #ffffff;
+  border-color: #009fff;
+  box-shadow: 0 0 0 3.5px rgba(0, 159, 255, 0.18);
+}
+
+/* Input bị disabled (khi gửi OTP) */
+.input-wrapper input:disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Ô mật khẩu có icon con mắt: chừa khoảng trống bên phải */
+.input-box.password .input-wrapper input {
+  padding-right: 48px;
+}
+
+/* Nút Toggle Password */
+.toggle-password {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+  z-index: 2;
+}
+
+.toggle-password:hover {
+  color: #009fff;
+  background-color: rgba(0, 159, 255, 0.08);
+}
+
+.toggle-password:focus-visible {
+  outline: 2px solid #009fff;
+  outline-offset: 1px;
+}
+
+.toggle-password .eye-icon {
+  display: block;
+}
+
+/* ============================================================
+   TÙY CHỌN: GHI NHỚ ĐĂNG NHẬP & QUÊN MẬT KHẨU
+   ============================================================ */
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  margin: 4px 0 20px 0;
+  gap: 12px;
+}
+
+.checkbox-custom {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.checkbox-custom input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 5px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.checkbox-custom:hover .checkmark {
+  border-color: #009fff;
+}
+
+.checkbox-custom input:checked ~ .checkmark {
+  background: #009fff;
+  border-color: #009fff;
+}
+
+.checkbox-custom input:checked ~ .checkmark::after {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.options a {
+  text-decoration: none;
+  color: #009fff;
+  font-weight: 600;
+  font-size: 14px;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.options a:hover {
+  color: #007fd6;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   NÚT SUBMIT
+   ============================================================ */
+
+.submit {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #009fff 0%, #0076d6 100%);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 159, 255, 0.35);
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ba4ff 0%, #006ec9 100%);
+  box-shadow: 0 6px 20px rgba(0, 159, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ============================================================
+   PHẦN OTP (QUÊN MẬT KHẨU)
+   ============================================================ */
+
+.otp-container {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #e2e8f0;
+  animation: authFadeIn 0.3s ease;
+}
+
+.otp-input {
+  letter-spacing: 10px;
+  text-align: center;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #009fff !important;
+  background-color: #f0f7ff !important;
+  border-color: #93c5fd !important;
+}
+
+.otp-input:focus {
+  background-color: #ffffff !important;
+  border-color: #009fff !important;
+  box-shadow: 0 0 0 3.5px rgba(0, 159, 255, 0.22) !important;
+}
+
+/* ============================================================
+   FOOTER TEXT DƯỚI CÙNG CARD
+   ============================================================ */
+
+.signup-text,
+.signin-text,
+.forgot-password-text {
+  margin-top: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  text-align: center;
+}
+
+.signup-text a,
+.signin-text a,
+.forgot-password-text a {
+  text-decoration: none;
+  color: #009fff;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.signup-text a:hover,
+.signin-text a:hover,
+.forgot-password-text a:hover {
+  text-decoration: underline;
+  color: #007fd6;
+}
+
+.dot-divider {
+  margin: 0 8px;
+  color: #cbd5e1;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (DESKTOP, TABLET, MOBILE)
+   ============================================================ */
+
+/* Tablet (dưới 768px) */
+.auth-notice { margin-bottom: 18px; padding: 13px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; border: 1px solid; }
+.auth-notice.error { background: #fff1f2; border-color: #fda4af; color: #9f1239; }
+.auth-notice.success { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+.login-page .submit:focus-visible, .login-page a:focus-visible { outline: 3px solid #60a5fa; outline-offset: 4px; }
+.login-page .checkbox-custom input:focus-visible ~ .checkmark { outline: 3px solid #60a5fa; outline-offset: 3px; }
+.login-page .input-row-2 > .input-box { min-width: 0; }
+.login-page .input-wrapper input { min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .login-page * { animation: none; transition: none; } }
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: 24px 16px;
+    align-items: flex-start;
+  }
+
+  .box {
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .auth-header h2 {
+    font-size: 23px;
+  }
+
+  .input-row-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .button.language.login-language {
+    top: 14px;
+    right: 14px;
+    padding: 6px 12px;
+  }
+
+  .button.language .text {
+    font-size: 15px;
+  }
+}
+
+/* Mobile nhỏ (dưới 480px) */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px 12px;
+  }
+
+  .box {
+    padding: 24px 16px;
+  }
+
+  .options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .input-wrapper input {
+    height: 48px;
+    font-size: 15px;
+  }
+
+  .submit {
+    height: 48px;
+    font-size: 15px;
+  }
+}

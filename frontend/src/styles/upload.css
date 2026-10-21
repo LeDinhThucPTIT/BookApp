@@ -1,0 +1,172 @@
+.upload-page * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}.upload-page {
+  background: linear-gradient(135deg, #e6f0ff 0%, #fefefe 100%);
+  color: #333;
+  min-height: 100vh;
+  overflow-x: hidden;
+}.upload-page header {
+  background: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 15px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #eef1f7;
+}.upload-page .logo {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #0078ff;
+  letter-spacing: 0.5px;
+}.upload-page nav {
+  display: flex;
+  gap: 20px;
+}.upload-page nav button {
+  background: none;
+  border: none;
+  font-size: 1em;
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}.upload-page nav button.active {
+  background: linear-gradient(135deg, #0078ff, #00b4d8);
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 120, 255, 0.3);
+}.upload-page nav button:hover {
+  background: #e6f2ff;
+}.upload-page .container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  padding: 40px 50px;
+  border-radius: 20px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}.upload-page h2 {
+  margin-bottom: 20px;
+  color: #0078ff;
+  font-size: 1.3em;
+  font-weight: 600;
+  border-left: 5px solid #0078ff;
+  padding-left: 10px;
+}.upload-page label {
+  display: block;
+  margin: 15px 0 6px;
+  font-weight: 600;
+  color: #444;
+}.upload-page input[type="text"],
+.upload-page textarea,
+.upload-page select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #d6dff5;
+  border-radius: 10px;
+  font-size: 1em;
+  outline: none;
+  transition: all 0.3s ease;
+}.upload-page input[type="text"]:focus,
+.upload-page textarea:focus,
+.upload-page select:focus {
+  border-color: #0078ff;
+  box-shadow: 0 0 0 4px rgba(0, 120, 255, 0.15);
+}.upload-page textarea {
+  resize: vertical;
+  min-height: 120px;
+}.upload-page input[type="file"] {
+  margin-top: 8px;
+  margin-right: 10px;
+  font-size: 0.9em;
+}.upload-page .checkbox-group {
+  margin: 15px 0;
+  background: #f7faff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  display: flex;
+
+  align-items: center;
+}.upload-page .checkbox-group input {
+  transform: scale(1.2);
+}.upload-page .checkbox-group label {
+  font-weight: normal;
+  margin-left: 8px;
+  color: #444;
+}.upload-page .checkbox-group a {
+  color: #0078ff;
+  text-decoration: none;
+}.upload-page .checkbox-group a:hover {
+  text-decoration: underline;
+}.upload-page .btn-submit {
+  background: linear-gradient(135deg, #0078ff, #00b4d8);
+  color: white;
+  padding: 14px 26px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 120, 255, 0.3);
+}.upload-page .btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 120, 255, 0.35);
+}.upload-page .history-container {
+  display: none;
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  padding: 40px 50px;
+  border-radius: 20px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.4s ease;
+}.upload-page .history-container h2 {
+  margin-bottom: 25px;
+}.upload-page .history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f1f7ff, #f8fbff);
+  padding: 15px 18px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  transition: all 0.25s ease;
+}.upload-page .history-item:hover {
+  transform: scale(1.02);
+  background: #e9f3ff;
+}.upload-page .history-item p {
+  margin: 0;
+  color: #333;
+}.upload-page .btn-delete {
+  background: #ff4d4d;
+  border: none;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 3px 8px rgba(255, 77, 77, 0.3);
+}.upload-page .btn-delete:hover {
+  background: #e63c3c;
+  transform: scale(1.05);
+}@keyframes fadeIn {
+from {
+    opacity: 0;
+    transform: translateY(15px);
+  }to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.upload-page .upload-fields { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 30px; min-width: 0; }
+.upload-page input:not([type]) { width: 100%; padding: 12px 14px; border: 1.5px solid #d6dff5; border-radius: 10px; font: inherit; }

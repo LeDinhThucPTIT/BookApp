@@ -1,0 +1,15 @@
+import { api, unwrap } from './client'
+
+export const listStories = async () => unwrap(await api.get('/stories'))
+export const createStory = async (payload) => unwrap(await api.post('/stories', payload))
+export const getStory = async (bookId) => unwrap(await api.get(`/stories/${bookId}`))
+export const updateStory = async (bookId, payload) => unwrap(await api.put(`/stories/${bookId}`, payload))
+export const listChapters = async (bookId) => unwrap(await api.get(`/stories/${bookId}/chapters`))
+export const getChapter = async (bookId, chapterId) => unwrap(await api.get(`/stories/${bookId}/chapters/${chapterId}`))
+export const addChapter = async (bookId, payload) => unwrap(await api.post(`/stories/${bookId}/chapters`, payload))
+export const editChapter = async (bookId, chapterId, payload) => unwrap(await api.put(`/stories/${bookId}/chapters/${chapterId}`, payload))
+export const deleteChapter = async (bookId, chapterId) => unwrap(await api.delete(`/stories/${bookId}/chapters/${chapterId}`))
+export const listAnnotations = async (bookId) => unwrap(await api.get(`/books/${bookId}/annotations`))
+export const createAnnotation = async (bookId, payload) => unwrap(await api.post(`/books/${bookId}/annotations`, payload))
+export const updateAnnotation = async (id, payload) => unwrap(await api.patch(`/annotations/${id}`, payload))
+export const deleteAnnotation = async (id) => unwrap(await api.delete(`/annotations/${id}`))

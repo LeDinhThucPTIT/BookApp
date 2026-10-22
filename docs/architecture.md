@@ -2,6 +2,8 @@
 
 BookApp sử dụng layered architecture: React gọi REST API, FastAPI nhận và kiểm tra dữ liệu, service xử lý nghiệp vụ, SQLAlchemy quản lý transaction với MySQL. Đây là một ứng dụng triển khai chung, chưa phải hệ thống microservice hoặc Clean Architecture đầy đủ.
 
+Dependency database dùng scope `function`: transaction được commit trước khi response bắt đầu gửi đi. Điều này ngăn trường hợp client nhận 201 rồi request tiếp theo chưa thấy bản ghi, và cho phép trả lỗi nếu commit thất bại. Các service trong cùng request dùng chung session; gặp lỗi thì rollback và dọn upload mới.
+
 | Lớp | Trách nhiệm | Mã nguồn |
 | --- | --- | --- |
 | React pages/components | Điều hướng, trạng thái giao diện, lựa chọn xung đột, phát âm thanh | `frontend/src/pages`, `frontend/src/components` |

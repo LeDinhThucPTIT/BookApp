@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { addChapter, deleteChapter, editChapter, getStory, listChapters, updateStory, getChapter } from '../api/reading-tools'
-import { useChapterDraft } from '../components/useChapterDraft'
+import { useChapterDraft } from '../hooks/useChapterDraft'
 import { errorMessage } from '../api/client'
 import { useAuth } from '../context/auth-context'
 import '../styles/stories.css'

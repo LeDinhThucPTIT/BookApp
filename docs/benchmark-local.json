@@ -1,26 +1,26 @@
 {
-  "measured_at_utc": "2026-10-22T04:30:44.529735+00:00",
+  "measured_at_utc": "2026-10-22T07:45:24.409371+00:00",
   "python": "3.12.8",
   "os": "Windows",
-  "catalog_rows": 1010,
+  "catalog_rows": 1011,
   "generated_rows": 1000,
   "page_size": 12,
   "method": "Sequential HTTPX ASGI requests with real local MySQL, one warmup per query; no network, TLS or concurrent load.",
   "results": {
     "newest": {
-      "samples": 20,
-      "p50_ms": 8.06,
-      "p95_ms": 9.08
+      "samples": 15,
+      "p50_ms": 8.49,
+      "p95_ms": 9.56
     },
     "favorites": {
-      "samples": 20,
-      "p50_ms": 7.89,
-      "p95_ms": 8.34
+      "samples": 15,
+      "p50_ms": 9.1,
+      "p95_ms": 10.8
     },
     "rating": {
-      "samples": 20,
-      "p50_ms": 8.01,
-      "p95_ms": 9.25
+      "samples": 15,
+      "p50_ms": 9.1,
+      "p95_ms": 9.66
     }
   }
 }

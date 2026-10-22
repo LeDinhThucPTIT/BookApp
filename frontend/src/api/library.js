@@ -32,20 +32,12 @@ export async function toggleSave(bookId) {
   return unwrap(await api.post(`/books/${bookId}/save`))
 }
 
-export async function listSaves() {
-  return unwrap(await api.get('/saves'))
-}
-
 export async function removeSave(bookId) {
   return unwrap(await api.post('/saves/remove', { book_id: Number(bookId) }))
 }
 
 export async function removeFavorite(bookId) {
   return unwrap(await api.post('/favorites/remove', { book_id: Number(bookId) }))
-}
-
-export async function listComments(bookId) {
-  return unwrap(await api.get(`/books/${bookId}/comments`))
 }
 
 export async function addComment(bookId, content) {

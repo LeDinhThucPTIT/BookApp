@@ -11,7 +11,7 @@ from app.utils.responses import success
 router = APIRouter(tags=["Reading tools"], dependencies=[Depends(get_current_user)])
 
 
-def service(db: AsyncSession = Depends(get_db)):
+def service(db: AsyncSession = Depends(get_db, scope="function")):
     return ReadingToolsService(db)
 
 

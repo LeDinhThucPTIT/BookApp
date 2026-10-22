@@ -1,4 +1,3 @@
-import asyncio
 from email.message import EmailMessage
 
 import aiosmtplib
@@ -32,7 +31,3 @@ async def send_email(to_email: str, subject: str, body: str) -> None:
             500,
             "MAIL_SEND_FAILED",
         ) from exc
-
-
-def send_email_sync(to_email: str, subject: str, body: str) -> None:
-    asyncio.run(send_email(to_email, subject, body))

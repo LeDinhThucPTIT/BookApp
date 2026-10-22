@@ -9,9 +9,9 @@ Ngày thực hiện: **22/10/2026**, múi giờ Việt Nam (UTC+7). Mã nguồn 
 | Frontend utility tests | 20 test pass: reader, audio lifecycle, theme và draft |
 | Oxlint | Không còn error/warning ở lần kiểm tra cuối |
 | Frontend production build | Build Vite thành công |
-| Backend/API/MySQL | 34 test được phát hiện; 32 pass, 2 skip có chủ đích |
+| Backend/API/MySQL | 36 test được phát hiện; 34 pass, 2 skip có chủ đích |
 | Alembic migration | Upgrade hai lần liên tiếp thành công trên database demo tạm |
-| Playwright | 6 luồng chức năng; kết quả hoàn tất được kiểm tra bằng runner database tạm |
+| Playwright | 6/6 luồng chức năng pass, chạy bằng runner database tạm |
 | Redis OTP | Lua được chạy bằng fakeredis + Lua runtime; test Redis server thực riêng được cấu hình cho CI |
 | YAML | Đọc được Compose 4 service và workflow 3 job; chưa tương đương Docker build/Compose validation bằng Docker CLI |
 
@@ -26,6 +26,7 @@ Hai test backend bỏ qua cục bộ là Redis server thực và Microsoft TTS l
 - Cache nội dung sách, invalidation sau chỉnh sửa và bỏ qua kết quả lớn hơn ngân sách cache.
 - TTS cache, gộp yêu cầu, hủy phát, prefetch, lỗi mạng/autoplay và kiểm tra nguồn audio phía server.
 - File giả định dạng, rỗng, quá lớn/hỏng và dọn file khi xử lý thất bại.
+- Transaction commit trước khi gửi response thành công; commit thất bại trả lỗi thay vì báo lưu thành công.
 
 Playwright chạy đăng nhập/logout/phân quyền, resume sau reload, ghi chú sau reload, xung đột hai browser context, tìm kiếm server và luồng tủ sách/bình luận. E2E có phát hiện lỗi vùng bấm nút bỏ lưu bằng 0; CSS đã bổ sung vùng bấm rõ ràng và focus outline.
 

@@ -30,7 +30,7 @@ async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
     access_token: str | None = Cookie(default=None, alias=settings.jwt_cookie_name),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db, scope="function"),
 ) -> User:
     token = _extract_token(request, credentials, access_token)
     payload = decode_access_token(token)
@@ -50,7 +50,7 @@ async def get_optional_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
     access_token: str | None = Cookie(default=None, alias=settings.jwt_cookie_name),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db, scope="function"),
 ) -> User | None:
     try:
         return await get_current_user(request, credentials, access_token, db)

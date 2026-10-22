@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, literal, union_all, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Book, Comment, Favorite, Rating, ReadingHistory, Save, User
@@ -13,12 +13,39 @@ from app.schemas.interaction import (
 from app.utils.exceptions import NotFoundError
 from app.models.reading_progress import ReadingProgress
 from app.schemas.interaction import ProgressUpdate
+from app.schemas.common import Page
 from sqlalchemy.dialects.mysql import insert as mysql_insert
 
 
 class InteractionService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+    async def library_page(self, user_id: int, page: int, page_size: int, search: str = "") -> Page[LibraryItem]:
+        relations = union_all(
+            select(Save.id.label('relation_id'), Save.book_id, Save.created_at, literal('save').label('kind')).where(Save.user_id == user_id),
+            select(Favorite.id.label('relation_id'), Favorite.book_id, Favorite.created_at, literal('favorite').label('kind')).where(Favorite.user_id == user_id),
+        ).subquery()
+        ranked = select(relations, func.row_number().over(partition_by=relations.c.book_id,
+            order_by=(relations.c.created_at.desc(), relations.c.kind, relations.c.relation_id.desc())).label('position')).subquery()
+        filters = [ranked.c.position == 1]
+        if search.strip():
+            filters.append(or_(Book.title.icontains(search.strip(), autoescape=True), Book.author.icontains(search.strip(), autoescape=True)))
+        total = await self.db.scalar(select(func.count()).select_from(ranked).join(Book, Book.id == ranked.c.book_id).where(*filters))
+        rows = (await self.db.execute(select(Book, ranked.c.relation_id, ranked.c.kind, ranked.c.created_at)
+            .join(ranked, Book.id == ranked.c.book_id).where(*filters)
+            .order_by(ranked.c.created_at.desc(), Book.id.desc()).offset((page - 1) * page_size).limit(page_size))).all()
+        return Page[LibraryItem](items=[LibraryItem(relation_id=id_, book_id=book.id, title=book.title, author=book.author,
+            genre=book.genre, cover_image=book.cover_image, summary=book.summary, type=kind, created_at=created)
+            for book, id_, kind, created in rows], total=total or 0, page=page, page_size=page_size)
+
+    async def comments_page(self, book_id: int, page: int, page_size: int) -> Page[CommentPublic]:
+        total = await self.db.scalar(select(func.count(Comment.id)).where(Comment.book_id == book_id))
+        rows = (await self.db.execute(select(Comment, User.username, User.avatar).join(User, Comment.user_id == User.id)
+            .where(Comment.book_id == book_id).order_by(Comment.created_at.desc(), Comment.id.desc())
+            .offset((page - 1) * page_size).limit(page_size))).all()
+        return Page[CommentPublic](items=[CommentPublic(id=comment.id, content=comment.content, created_at=comment.created_at,
+            username=username, avatar=avatar) for comment, username, avatar in rows], total=total or 0, page=page, page_size=page_size)
 
     async def get_progress(self, user_id: int, book_id: int):
         await self._ensure_book(book_id)

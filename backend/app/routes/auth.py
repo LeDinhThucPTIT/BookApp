@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.config import settings
-from app.middlewares.auth import get_current_user
+from app.middlewares.auth import get_current_user, get_optional_user
 from app.middlewares.rate_limit import limiter
 from app.models import User
 from app.schemas.auth import (
@@ -25,6 +25,7 @@ def _set_token_cookie(response: Response, token: str, remember: bool = True) -> 
         key=settings.jwt_cookie_name,
         value=token,
         httponly=True,
+        secure=settings.production,
         samesite="lax",
         max_age=settings.jwt_expire_minutes * 60 if remember else None,
         path="/",
@@ -60,7 +61,9 @@ async def login(
 
 
 @router.post("/logout", response_model=APIResponse[None])
-async def logout():
+async def logout(user: User | None = Depends(get_optional_user), service: AuthService = Depends(get_auth_service)):
+    if user:
+        await service.revoke_sessions(user.id)
     result = success(None, "Đã đăng xuất!")
     result.delete_cookie(settings.jwt_cookie_name, path="/")
     return result
@@ -80,7 +83,7 @@ async def send_otp(
 ):
     reset_token = await service.send_reset_otp(payload.email_or_phone)
     result = success({"reset_token": reset_token}, "Mã OTP đã được gửi tới email!")
-    result.set_cookie("reset_token", reset_token, httponly=True, samesite="lax", max_age=600)
+    result.set_cookie("reset_token", reset_token, httponly=True, secure=settings.production, samesite="lax", max_age=600)
     return result
 
 
@@ -92,4 +95,6 @@ async def verify_otp(
     service: AuthService = Depends(get_auth_service),
 ):
     await service.reset_password(payload, request.cookies.get("reset_token"))
-    return success(None, "Cập nhật mật khẩu thành công!")
+    result = success(None, "Cập nhật mật khẩu thành công!")
+    result.delete_cookie("reset_token")
+    return result

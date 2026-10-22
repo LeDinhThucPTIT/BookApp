@@ -1,18 +1,13 @@
 import axios from 'axios'
 
-const TOKEN_KEY = 'bookapp_token'
-
-export function getToken() {
-  try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) } catch { return null }
-}
-
-export function setToken(token, remember = true) {
+export function clearLegacyToken() {
   try {
-    localStorage.removeItem(TOKEN_KEY)
-    sessionStorage.removeItem(TOKEN_KEY)
-    if (token) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token)
-  } catch { /* HTTP-only session cookie also supports browsers blocking storage. */ }
+    localStorage.removeItem('bookapp_token')
+    sessionStorage.removeItem('bookapp_token')
+  } catch { /* Cookies work even when web storage is unavailable. */ }
 }
+
+clearLegacyToken()
 
 export const api = axios.create({
   baseURL: '/api/v1',
@@ -20,12 +15,11 @@ export const api = axios.create({
   timeout: 35000,
 })
 
-api.interceptors.request.use((config) => {
-  const token = getToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+api.interceptors.response.use((response) => response, (error) => {
+  if (error.response?.status === 401 && !error.config?.url?.startsWith('/auth/')) {
+    window.dispatchEvent(new Event('bookapp:session-expired'))
   }
-  return config
+  return Promise.reject(error)
 })
 
 export function unwrap(response) {

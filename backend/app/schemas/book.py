@@ -18,6 +18,14 @@ class BookPublic(ORMModel):
     uploaded_by: int | None = None
     avg_rating: float = 0
     total_ratings: int = 0
+    favorite_count: int = 0
+
+
+class BookCatalog(BaseModel):
+    items: list[BookPublic]
+    total: int
+    page: int
+    page_size: int
 
 
 class ReaderPage(BaseModel):

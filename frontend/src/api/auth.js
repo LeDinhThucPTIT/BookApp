@@ -1,8 +1,8 @@
-import { api, setToken, unwrap } from './client'
+import { api, clearLegacyToken, unwrap } from './client'
 
 export async function login(email, password, remember = true) {
   const data = unwrap(await api.post('/auth/login', { email, password, remember }))
-  if (data?.access_token) setToken(data.access_token, remember)
+  clearLegacyToken()
   return data
 }
 
@@ -14,7 +14,7 @@ export async function logout() {
   try {
     await api.post('/auth/logout')
   } finally {
-    setToken(null)
+    clearLegacyToken()
   }
 }
 

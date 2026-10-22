@@ -1,35 +1,42 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { errorMessage } from '../api/client'
-import { listSaves, removeFavorite, removeSave } from '../api/library'
+import { getLibraryPage, removeFavorite, removeSave } from '../api/library'
 import { mediaUrl } from '../utils/media'
 
 export default function SavePage() {
-  const [items, setItems] = useState([])
-  const [message, setMessage] = useState('Đang tải...')
+  const { search = '' } = useOutletContext() || {}
+  return <LibraryPage key={search.trim()} search={search.trim()} />
+}
+
+function LibraryPage({ search }) {
+  const [page, setPage] = useState(1)
+  const [retry, setRetry] = useState(0)
+  const [result, setResult] = useState(null)
+  const [actionError, setActionError] = useState('')
+  const [removing, setRemoving] = useState(null)
+  const key = `${page}:${retry}:${search}`
+  const current = result?.key === key ? result : null
+  const items = current?.data?.items || []
+  const total = current?.data?.total || 0
 
   useEffect(() => {
-    listSaves()
+    const controller = new AbortController()
+    const timer = setTimeout(() => getLibraryPage({ page, page_size: 12, search }, controller.signal)
       .then((data) => {
-        const list = Array.isArray(data) ? data : []
-        setItems(list)
-        if (!list.length) setMessage('Bạn chưa lưu hoặc yêu thích quyển sách nào.')
+        if (!controller.signal.aborted) setResult({ key, data })
       })
-      .catch((err) => setMessage(errorMessage(err, 'Không thể tải danh sách lưu.')))
-  }, [])
-
-  if (!items.length) {
-    return (
-      <main className="Main">
-        <div className="save-text"><h3>LƯU TRỮ</h3></div>
-        <div className="save-container"><p className="empty-save">{message}</p></div>
-      </main>
-    )
-  }
+      .catch((err) => { if (!controller.signal.aborted) setResult({ key, error: errorMessage(err, 'Không thể tải tủ sách.') }) }), search ? 250 : 0)
+    return () => { clearTimeout(timer); controller.abort() }
+  }, [page, retry, search, key])
 
   return (
     <main className="Main">
       <div className="save-text"><h3>LƯU TRỮ</h3></div>
+      {!current && <p role="status">Đang tải tủ sách…</p>}
+      {current?.error && <p role="alert">{current.error} <button type="button" onClick={() => setRetry((value) => value + 1)}>Thử lại</button></p>}
+      {actionError && <p role="alert">{actionError}</p>}
+      {current?.data && !items.length && <p className="empty-save">{search ? 'Không tìm thấy sách phù hợp.' : 'Bạn chưa lưu hoặc yêu thích quyển sách nào.'}</p>}
       <div className="save-container">
         {items.map((book) => (
           <div className="book-save" key={`${book.type}-${book.book_id}`}>
@@ -44,14 +51,23 @@ export default function SavePage() {
               />
               <button
                 className="remove-save"
-                title="Xoá khỏi lưu trữ"
+                type="button"
+                title={book.type === 'favorite' ? 'Bỏ yêu thích' : 'Bỏ lưu sách'}
+                aria-label={`${book.type === 'favorite' ? 'Bỏ yêu thích' : 'Bỏ lưu'}: ${book.title}`}
+                disabled={removing !== null}
                 onClick={async () => {
-                  if (book.type === 'favorite') await removeFavorite(book.book_id)
-                  else await removeSave(book.book_id)
-                  setItems((prev) => prev.filter((row) => !(row.book_id === book.book_id && row.type === book.type)))
+                  setRemoving(book.book_id)
+                  setActionError('')
+                  try {
+                    if (book.type === 'favorite') await removeFavorite(book.book_id)
+                    else await removeSave(book.book_id)
+                    if (items.length === 1 && page > 1) setPage((value) => value - 1)
+                    else setRetry((value) => value + 1)
+                  } catch (error) { setActionError(errorMessage(error, 'Không thể bỏ sách khỏi tủ.')) }
+                  finally { setRemoving(null) }
                 }}
               >
-                <i className="fa-solid fa-xmark" style={{ position: 'absolute', top: 10, left: 10, fontSize: 20, color: '#fff', cursor: 'pointer' }}></i>
+                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
               </button>
             </div>
             <Link to={`/book/${book.book_id}`} className="book-save-info">
@@ -61,6 +77,11 @@ export default function SavePage() {
           </div>
         ))}
       </div>
+      <nav aria-label="Phân trang tủ sách" style={{ display: 'flex', gap: 16, alignItems: 'center', padding: 24 }}>
+        <button type="button" disabled={page === 1 || !current} onClick={() => setPage((value) => value - 1)}>Trang trước</button>
+        <span>Trang {page} / {Math.max(1, Math.ceil(total / 12))}</span>
+        <button type="button" disabled={!current || page * 12 >= total} onClick={() => setPage((value) => value + 1)}>Trang sau</button>
+      </nav>
     </main>
   )
 }

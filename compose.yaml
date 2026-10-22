@@ -1,0 +1,80 @@
+name: bookapp
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: bookapp
+      MYSQL_USER: bookapp
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Run python scripts/setup_demo.py first}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run python scripts/setup_demo.py first}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/bookapp.sql:/docker-entrypoint-initdb.d/01-demo.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u bookapp -p\"$$MYSQL_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DEBUG: "false"
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: bookapp
+      MYSQL_USER: bookapp
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Run python scripts/setup_demo.py first}
+      FLASK_SECRET_KEY: ""
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_DEFAULT_SENDER: ${MAIL_DEFAULT_SENDER:-}
+    volumes:
+      - books:/app/app/static/books
+      - book_html:/app/app/static/book_html
+      - covers:/app/app/static/images/Book
+      - tts_cache:/app/.cache/tts
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health/ready', timeout=5)"]
+      interval: 15s
+      timeout: 7s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    ports:
+      - "${DEMO_BIND:-127.0.0.1}:${DEMO_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  mysql_data:
+  redis_data:
+  books:
+  book_html:
+  covers:
+  tts_cache:

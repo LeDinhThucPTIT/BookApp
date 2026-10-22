@@ -1,32 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { errorMessage } from '../api/client'
 import { updateProfile } from '../api/users'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import { DEFAULT_AVATAR, mediaUrl } from '../utils/media'
 
 export default function SettingPage() {
   const { user, logout, setUser } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({
-    username: '',
-    name: '',
-    ngaysinh: '',
-    sex: 'Nam',
-  })
+  const [form, setForm] = useState(() => ({
+    username: user.username || '', name: user.name || '',
+    ngaysinh: user.ngaysinh || '', sex: user.sex || 'Nam',
+  }))
   const [avatarFile, setAvatarFile] = useState(null)
-  const [preview, setPreview] = useState(DEFAULT_AVATAR)
+  const [preview, setPreview] = useState(() => mediaUrl(user.avatar, DEFAULT_AVATAR))
+  const objectUrl = useRef(null)
 
   useEffect(() => {
-    if (!user) return
-    setForm({
-      username: user.username || '',
-      name: user.name || '',
-      ngaysinh: user.ngaysinh || '',
-      sex: user.sex || 'Nam',
-    })
-    setPreview(mediaUrl(user.avatar, '/images/Logo/Avatar2.png'))
-  }, [user])
+    return () => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current) }
+  }, [])
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -94,8 +86,10 @@ export default function SettingPage() {
             style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0]
+              if (objectUrl.current) URL.revokeObjectURL(objectUrl.current)
+              objectUrl.current = file ? URL.createObjectURL(file) : null
               setAvatarFile(file || null)
-              if (file) setPreview(URL.createObjectURL(file))
+              setPreview(objectUrl.current || mediaUrl(user.avatar, DEFAULT_AVATAR))
             }}
           />
           <button type="button" className="btn" onClick={() => document.getElementById('avatar').click()}>

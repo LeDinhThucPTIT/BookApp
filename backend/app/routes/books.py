@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from typing import Literal
+from fastapi import APIRouter, Depends, File, Form, UploadFile, Query
 
 from app.middlewares.auth import get_current_user
 from app.models import User
-from app.schemas.book import BookContent, BookCreateForm, BookPublic
+from app.schemas.book import BookCatalog, BookContent, BookCreateForm, BookPublic
 from app.schemas.common import APIResponse
 from app.services import BookService
 from app.routes.deps import get_book_service
@@ -25,6 +26,17 @@ async def my_uploads(
 ):
     books = await service.list_books(uploaded_by=user.id)
     return success(books)
+
+
+@router.get("/catalog", response_model=APIResponse[BookCatalog])
+async def catalog(
+    page: int = Query(default=1, ge=1, le=100000),
+    page_size: int = Query(default=12, ge=1, le=100),
+    search: str = Query(default="", max_length=200),
+    sort: Literal["newest", "favorites", "rating"] = "newest",
+    service: BookService = Depends(get_book_service),
+):
+    return success(await service.catalog(page, page_size, search, sort))
 
 
 @router.get("/{book_id}", response_model=APIResponse[BookPublic])

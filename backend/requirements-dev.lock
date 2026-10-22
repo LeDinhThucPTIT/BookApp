@@ -1,0 +1,4 @@
+-r requirements.lock
+fakeredis==2.40.0
+lupa==2.8
+sortedcontainers==2.4.0

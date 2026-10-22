@@ -47,6 +47,7 @@ class AuthTests(unittest.TestCase):
                             self.assertEqual((await client.post('/api/v1/auth/login', json={'email': email, 'password': 'wrong'})).status_code, 401)
                             response = await client.post('/api/v1/auth/login', json={'email': email.upper(), 'password': payload['password'], 'remember': False})
                             self.assertEqual(response.status_code, 200, response.text)
+                            old_token = response.json()['data']['access_token']
                             cookie = response.headers.get('set-cookie', '')
                             self.assertIn('HttpOnly', cookie)
                             self.assertNotIn('Max-Age', cookie)
@@ -57,8 +58,19 @@ class AuthTests(unittest.TestCase):
                             response = await client.post('/api/v1/auth/logout')
                             self.assertIn('Max-Age=0', response.headers.get('set-cookie', ''))
                             self.assertEqual((await client.get('/api/v1/auth/me')).status_code, 401)
+                            self.assertEqual((await client.get('/api/v1/auth/me', headers={'Authorization': f'Bearer {old_token}'})).status_code, 401)
                             response = await client.post('/api/v1/auth/login', json={'email': email, 'password': payload['password'], 'remember': True})
                             self.assertIn('Max-Age=', response.headers.get('set-cookie', ''))
+                            reset_old_token = response.json()['data']['access_token']
+                            from unittest.mock import AsyncMock, patch
+                            from app.utils.security import decode_access_token
+                            user_id = int(decode_access_token(reset_old_token)['sub'])
+                            with patch('app.services.auth_service.otp_store.consume', new=AsyncMock(return_value=user_id)):
+                                response = await client.post('/api/v1/auth/forgot/verify', json={'otp': '123456', 'reset_token': 'test-only', 'new_pass': 'changed-password-123'})
+                            self.assertEqual(response.status_code, 200, response.text)
+                            self.assertEqual((await client.get('/api/v1/auth/me', headers={'Authorization': f'Bearer {reset_old_token}'})).status_code, 401)
+                            self.assertEqual((await client.post('/api/v1/auth/login', json={'email': email, 'password': payload['password']})).status_code, 401)
+                            self.assertEqual((await client.post('/api/v1/auth/login', json={'email': email, 'password': 'changed-password-123'})).status_code, 200)
                     finally:
                         await db.rollback()
             finally:

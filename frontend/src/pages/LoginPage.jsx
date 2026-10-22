@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import * as authApi from '../api/auth'
 import { errorMessage } from '../api/client'
 import PasswordToggle from '../components/PasswordToggle'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 
 export default function LoginPage() {
   const { login } = useAuth()

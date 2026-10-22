@@ -2,6 +2,23 @@
 
 Ứng dụng web đọc sách và truyện theo chương, xây dựng bằng **React, FastAPI và MySQL**. Dự án phục vụ học tập, trình diễn nghiệp vụ fullstack và thử nghiệm AI hỗ trợ đọc sách.
 
+[Kiến trúc và quyết định kỹ thuật](docs/architecture.md) · [Triển khai](docs/deployment.md) · [Kịch bản demo và mô tả CV](docs/portfolio.md) · [Kết quả kiểm chứng](docs/verification.md)
+
+![Thư viện BookApp](docs/images/home.png)
+
+## Chạy demo bằng Docker
+
+Yêu cầu Docker Engine/Desktop có Compose và Python để tạo secret cục bộ. Từ thư mục gốc:
+
+```sh
+python scripts/setup_demo.py
+docker compose up --build -d
+```
+
+Mở **http://localhost:8080**, Swagger tại **http://localhost:8080/docs**. Compose dựng frontend/Nginx, backend, MySQL và Redis; SQL demo chỉ được import khi volume MySQL chưa có dữ liệu. Script giữ nguyên `.env` nếu đã tồn tại. Tài khoản demo ở phần bên dưới.
+
+Upload, database và cache được giữ trong volume khi khởi động lại. `docker compose down` dừng dịch vụ và giữ volume. Cấu hình mặc định chỉ mở cổng trên máy cá nhân; xem [hướng dẫn triển khai HTTPS](docs/deployment.md) trước khi đưa lên Internet.
+
 ## Tính năng
 
 - Đăng ký, đăng nhập JWT, phân quyền người đọc/quản trị, hồ sơ cá nhân và đặt lại mật khẩu qua email.
@@ -22,7 +39,8 @@
 | Backend | FastAPI, SQLAlchemy 2 async, aiomysql, Pydantic, JWT, SlowAPI |
 | Dữ liệu | MySQL 8, PDF/văn bản HTML, Pillow, pypdf |
 | AI và âm thanh | Gemini API, edge-tts, HTML Audio |
-| Kiểm thử | Python unittest/httpx, Node.js test runner, Oxlint, GitHub Actions |
+| Kiểm thử | Python unittest/httpx, Node.js test runner, Playwright, Oxlint, GitHub Actions |
+| Vận hành | Docker Compose, Nginx, Redis, Alembic migrations |
 
 ```text
 backend/
@@ -35,7 +53,8 @@ backend/
   tests/              Kiểm thử API, dữ liệu và dịch vụ
   .env.example        Cấu hình mẫu, không chứa khóa thật
   bookapp.sql         Schema và dữ liệu demo
-  migrate.py          Migration có thể chạy lại
+  migrate.py          Entrypoint chạy Alembic đến phiên bản mới nhất
+  migrations/         Các phiên bản migration; giữ nguyên dữ liệu đang có
   reset_demo_data.py  Công cụ làm mới/xuất dữ liệu demo
 frontend/
   public/images/      Asset giao diện
@@ -81,11 +100,11 @@ Ví dụ trên Windows PowerShell:
 cd backend
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock
 Copy-Item .env.example .env
 ```
 
-Chỉnh `backend/.env`: điền kết nối MySQL và thay `JWT_SECRET_KEY`/`FLASK_SECRET_KEY` bằng giá trị ngẫu nhiên riêng. Giữ `.env` trên máy, không commit lên GitHub.
+Chỉnh `backend/.env`: điền kết nối MySQL và thay `JWT_SECRET_KEY` bằng giá trị ngẫu nhiên riêng. Để `FLASK_SECRET_KEY` trống nếu không cần tương thích cấu hình cũ. Giữ `.env` trên máy, không commit lên GitHub. `requirements.lock` khóa phiên bản dependency đã kiểm thử; `requirements.txt` ghi khoảng phiên bản dùng khi chủ động nâng cấp.
 
 Sau khi import SQL và cấu hình `.env`:
 
@@ -159,8 +178,10 @@ Tài liệu chi tiết và schema nằm tại Swagger `/docs`. Các nhóm chính
 | --- | --- |
 | `/auth`, `/users` | Authentication, OTP, hồ sơ |
 | `/books` | Sách, upload PDF, nội dung và phân trang |
+| `/books/catalog` | Tìm theo tên/tác giả, phân trang và xếp theo mới nhất/lượt yêu thích/đánh giá |
 | `/stories` | Truyện, chương và trạng thái |
 | `/books/{id}/…`, `/history` | Tủ sách, đánh giá, bình luận, tiến độ, ghi chú |
+| `/library`, `/books/{id}/comments/page` | Tủ sách và bình luận phân trang phía server |
 | `/admin` | Thống kê, quản lý sách/người dùng/bình luận |
 | `/ai` | Hỏi đáp và tóm tắt |
 
@@ -179,8 +200,21 @@ npm run build
 Backend, từ thư mục `backend` đã kích hoạt môi trường ảo:
 
 ```sh
+python -m pip install -r requirements-dev.lock
 python -m unittest discover -s tests -v
 ```
+
+Để kiểm thử MySQL trên **database tạm riêng** và chạy các luồng trình duyệt:
+
+```sh
+# Từ frontend, cài Chromium một lần:
+npx playwright install chromium
+
+# Từ backend, dùng kết nối MySQL trong .env có quyền tạo database:
+python test_mysql.py --e2e
+```
+
+Runner tạo database tên ngẫu nhiên, import demo, kiểm tra migration hai lần, chạy test rồi xóa đúng database tạm đó. Không reset database đang dùng. Thêm `--benchmark` để tạo báo cáo đo local; `--screenshots` để chụp lại ảnh demo từ dữ liệu mẫu. Chi tiết và giới hạn phép đo ở [verification.md](docs/verification.md).
 
 Test AI dùng mock và không gọi Gemini. Các test MySQL mặc định được bỏ qua; bật chúng sau khi import demo, cấu hình `.env` và chạy migration:
 
@@ -196,7 +230,16 @@ $env:BOOKAPP_TEST_EDGE_TTS = '1'
 python -m unittest discover -s tests -p test_tts.py -v
 ```
 
-GitHub Actions chạy test/lint/build frontend và test backend với MySQL riêng, import SQL demo rồi chạy migration. CI không gọi Gemini hoặc Edge trực tuyến. Workflow mới chỉ có thể xác nhận chạy trên GitHub sau khi đẩy repository; lint hiện còn một số cảnh báo trong code cũ.
+GitHub Actions chạy test/lint/build frontend, test backend với MySQL/Redis riêng, kiểm tra migration chạy lại được và chạy Playwright. Job Docker dựng toàn bộ stack và kiểm tra readiness qua Nginx. CI không gọi Gemini hoặc Edge trực tuyến. Trạng thái workflow trên GitHub chỉ được xác nhận sau khi đẩy repository; chưa có bước tự động publish/deploy.
+
+## Xác thực và vận hành
+
+- Trình duyệt dùng cookie `HttpOnly`, `SameSite=Lax`; token cũ trong web storage được dọn khi ứng dụng mở. Bearer token vẫn dùng được trong Swagger/API client.
+- Đăng xuất và đặt lại mật khẩu tăng `token_version` phía server, vô hiệu hóa **mọi phiên đăng nhập của tài khoản**. Mật khẩu plaintext cũ bị từ chối; tài khoản dữ liệu cũ cần đặt lại mật khẩu nếu chưa dùng hash.
+- `APP_ENV=production` yêu cầu `DEBUG=false`, secret tối thiểu 32 ký tự, Redis và CORS HTTPS rõ ràng; cookie được đặt `Secure`. Backend từ chối cấu hình không đạt yêu cầu khi khởi động.
+- OTP dùng HMAC, hết hạn sau 10 phút, khóa sau 5 lần sai, có khoảng chờ gửi lại 60 giây và chỉ dùng một lần. Redis chia sẻ OTP/rate limit giữa worker; bộ nhớ cục bộ dành cho development.
+- HTML sách được đọc/parse ngoài event loop và cache theo đường dẫn, thời gian sửa cùng kích thước file; cache có ngân sách khoảng 16 MiB, tối đa 64 mục mỗi process.
+- `/health` kiểm tra process; `/health/ready` kiểm tra MySQL/Redis. API thêm `X-Request-ID`; log request không ghi body, query hoặc thông tin xác thực.
 
 ## Giới hạn hiện tại
 
@@ -205,6 +248,8 @@ GitHub Actions chạy test/lint/build frontend và test backend với MySQL riê
 - Bản nháp chỉ lưu trên thiết bị hiện tại, không đồng bộ nhiều thiết bị.
 - AI có thể trả lời sai; trích dẫn được kiểm tra khớp văn bản nhưng không đảm bảo kết luận đúng.
 - Chưa có cam kết độ sẵn sàng của dịch vụ Edge TTS; dự án hiện phù hợp cho demo/học tập.
+- Endpoint legacy giữ để tương thích; frontend dùng API danh mục, tủ sách và bình luận phân trang mới. Danh sách truyện, lịch sử và một số danh sách quản trị vẫn cần phân trang server khi dữ liệu lớn.
+- Chưa có đồng bộ bản nháp lên cloud, OCR, tìm kiếm toàn văn hoặc đánh giá chất lượng AI trên một tập câu hỏi chuẩn. Kiểm tra trích dẫn là khớp văn bản nguồn, không phải hệ thống RAG/vector search.
 
 ## Những file đưa lên Git
 

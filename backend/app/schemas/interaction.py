@@ -1,12 +1,17 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.common import ORMModel
 
 
 class CommentCreate(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
+
+    @field_validator('content', mode='before')
+    @classmethod
+    def trim_content(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class CommentPublic(ORMModel):

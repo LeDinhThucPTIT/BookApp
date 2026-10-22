@@ -7,24 +7,34 @@ import {
   getFavorite,
   getRating,
   getSave,
-  listComments,
+  getCommentsPage,
   setRating,
   toggleFavorite,
   toggleSave,
 } from '../api/library'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import { DEFAULT_AVATAR, mediaUrl } from '../utils/media'
 
 export default function BookDetailPage() {
   const { bookId } = useParams()
+  return <BookDetailSession key={bookId} bookId={bookId} />
+}
+
+function BookDetailSession({ bookId }) {
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const [book, setBook] = useState(null)
+  const [loadError, setLoadError] = useState('')
+  const [retry, setRetry] = useState(0)
   const [favorite, setFavorite] = useState(false)
   const [saved, setSaved] = useState(false)
   const [rating, setRatingState] = useState({ average: 0, total: 0, user_rating: 0 })
   const [comments, setComments] = useState([])
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [commentsPage, setCommentsPage] = useState(1)
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [commentsError, setCommentsError] = useState('')
   const [expanded, setExpanded] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -35,24 +45,22 @@ export default function BookDetailPage() {
   const [inlineCommentText, setInlineCommentText] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const load = async () => {
-    const detail = await getBook(bookId)
-    setBook(detail)
-    const [fav, save, rate, list] = await Promise.all([
-      getFavorite(bookId),
-      getSave(bookId),
-      getRating(bookId),
-      listComments(bookId),
-    ])
-    setFavorite(Boolean(fav?.favorite))
-    setSaved(Boolean(save?.saved))
-    setRatingState(rate || { average: 0, total: 0, user_rating: 0 })
-    setComments(Array.isArray(list) ? list : [])
-  }
-
   useEffect(() => {
-    load().catch((err) => alert(errorMessage(err, 'Không tải được chi tiết sách')))
-  }, [bookId])
+    let active = true
+    Promise.all([getBook(bookId), getFavorite(bookId), getSave(bookId), getRating(bookId), getCommentsPage(bookId)])
+      .then(([detail, fav, save, rate, list]) => {
+        if (!active) return
+        setBook(detail)
+        setFavorite(Boolean(fav?.favorite))
+        setSaved(Boolean(save?.saved))
+        setRatingState(rate || { average: 0, total: 0, user_rating: 0 })
+        setComments(list.items)
+        setCommentsTotal(list.total)
+      }).catch((err) => { if (active) setLoadError(errorMessage(err, 'Không tải được chi tiết sách')) })
+    return () => { active = false }
+  }, [bookId, retry])
+
+  if (loadError) return <main className="Main"><p role="alert">{loadError}</p><button type="button" onClick={() => { setLoadError(''); setRetry((value) => value + 1) }}>Thử lại</button></main>
 
   if (!book) {
     return (
@@ -84,8 +92,10 @@ export default function BookDetailPage() {
       await addComment(bookId, commentText.trim())
       setCommentText('')
       setCommentOpen(false)
-      const updated = await listComments(bookId)
-      setComments(Array.isArray(updated) ? updated : [])
+      const updated = await getCommentsPage(bookId)
+      setComments(updated.items)
+      setCommentsTotal(updated.total)
+      setCommentsPage(1)
     } catch (err) {
       alert(`❌ ${errorMessage(err, 'Không thể gửi bình luận')}`)
     } finally {
@@ -103,8 +113,10 @@ export default function BookDetailPage() {
       setSubmitting(true)
       await addComment(bookId, inlineCommentText.trim())
       setInlineCommentText('')
-      const updated = await listComments(bookId)
-      setComments(Array.isArray(updated) ? updated : [])
+      const updated = await getCommentsPage(bookId)
+      setComments(updated.items)
+      setCommentsTotal(updated.total)
+      setCommentsPage(1)
     } catch (err) {
       alert(`❌ ${errorMessage(err, 'Không thể gửi bình luận')}`)
     } finally {
@@ -282,7 +294,7 @@ export default function BookDetailPage() {
         <section className="comment-section" aria-labelledby="comment-heading">
           <div className="comment-header-bar">
             <h3 id="comment-heading">
-              Bình luận độc giả <span id="comment-count" className="comment-badge">({comments.length})</span>
+              Bình luận độc giả <span id="comment-count" className="comment-badge">({commentsTotal})</span>
             </h3>
             <button
               id="write-comment-btn"
@@ -301,6 +313,8 @@ export default function BookDetailPage() {
             <div className="inline-comment-content">
               <textarea
                 className="inline-comment-input"
+                aria-label="Nội dung bình luận"
+                maxLength={2000}
                 placeholder={user ? "Chia sẻ cảm nghĩ hoặc nhận xét của bạn về cuốn sách này..." : "Đăng nhập để tham gia bình luận..."}
                 rows={2}
                 value={inlineCommentText}
@@ -364,6 +378,19 @@ export default function BookDetailPage() {
               ))
             )}
           </div>
+
+          {commentsError && <p role="alert">{commentsError}</p>}
+          {comments.length < commentsTotal && <button type="button" disabled={commentsLoading} onClick={async () => {
+            setCommentsLoading(true)
+            setCommentsError('')
+            try {
+              const next = await getCommentsPage(bookId, commentsPage + 1)
+              setComments((current) => [...new Map([...current, ...next.items].map((item) => [item.id, item])).values()])
+              setCommentsTotal(next.total)
+              setCommentsPage(next.page)
+            } catch (error) { setCommentsError(errorMessage(error, 'Không tải được bình luận.')) }
+            finally { setCommentsLoading(false) }
+          }}>{commentsLoading ? 'Đang tải…' : 'Xem thêm bình luận'}</button>}
 
           {/* Modal Popup viết bình luận với Backdrop làm mờ chuyên nghiệp */}
           {commentOpen && (

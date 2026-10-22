@@ -36,6 +36,7 @@ CREATE TABLE `users` (
   `ngaysinh` date DEFAULT NULL,
   `sex` varchar(10) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
+  `token_version` int NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `name` varchar(100) DEFAULT NULL,
   `role` varchar(10) DEFAULT 'user',

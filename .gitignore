@@ -39,5 +39,8 @@ Thumbs.db
 .coverage
 htmlcov/
 coverage/
+frontend/playwright-report/
+frontend/test-results/
+artifacts/local/
 *.tmp
 *.bak

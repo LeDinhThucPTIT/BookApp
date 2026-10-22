@@ -35,12 +35,14 @@ async def get_current_user(
     token = _extract_token(request, credentials, access_token)
     payload = decode_access_token(token)
     user_id = payload.get("sub")
-    if not user_id:
+    if not isinstance(user_id, str) or not user_id.isascii() or not user_id.isdigit() or len(user_id) > 10 or not 1 <= int(user_id) <= 2147483647:
         raise UnauthorizedError()
 
     user = await db.scalar(select(User).where(User.id == int(user_id)))
     if not user:
         raise UnauthorizedError("Tài khoản không tồn tại!")
+    if type(payload.get("ver")) is not int or payload["ver"] != user.token_version:
+        raise UnauthorizedError("Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại!")
     return user
 
 

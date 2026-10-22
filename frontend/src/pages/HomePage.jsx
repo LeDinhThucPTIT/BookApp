@@ -1,68 +1,49 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { listBooks } from '../api/books'
+import { useCatalog } from '../hooks/useCatalog'
 import BookCard from '../components/BookCard'
 import BookSection from '../components/BookSection'
-import { shuffle } from '../utils/media'
 
 export default function HomePage() {
   const { search = '' } = useOutletContext() || {}
-  const [books, setBooks] = useState([])
-  const [error, setError] = useState('')
-  const [suggested, setSuggested] = useState([])
+  const keyword = search.trim()
+  return <CatalogPage key={keyword} keyword={keyword} />
+}
 
-  useEffect(() => {
-    listBooks()
-      .then((data) => {
-        const list = Array.isArray(data) ? data : []
-        setBooks(list)
-        setSuggested(shuffle(list).slice(0, 6))
-      })
-      .catch(() => setError('Không tải được dữ liệu 😢'))
-  }, [])
-
-  const keyword = search.toLowerCase().trim()
-  const matched = useMemo(
-    () =>
-      books.filter((book) => {
-        const title = book.title?.toLowerCase() || ''
-        const author = book.author?.toLowerCase() || ''
-        return title.includes(keyword) || author.includes(keyword)
-      }),
-    [books, keyword],
-  )
-
-  const empty = error || 'Không có sách nào để hiển thị.'
-
-  if (keyword) {
-    return (
-      <main className="Main">
+function CatalogPage({ keyword }) {
+  const [page, setPage] = useState(1)
+  const catalog = useCatalog({ page, search: keyword })
+  return <main className="Main">
+    <div className="Content">
+      <div style={{ padding: '18px 24px' }}><Link to="/stories">Khám phá truyện theo chương →</Link></div>
+      {catalog.loading && <p role="status">Đang tải sách…</p>}
+      {catalog.error && <p role="alert">{catalog.error} <button type="button" onClick={catalog.retry}>Thử lại</button></p>}
+      {keyword ? <>
+        <h1>Kết quả tìm kiếm: {keyword}</h1>
         <div className="search-results" style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-          {matched.length > 0 ? (
-            matched.map((book) => <BookCard key={book.id} book={book} />)
-          ) : (
-            <p style={{ textAlign: 'center', margin: '40px 0 60px', fontSize: 18, color: '#666' }}>
-              Không tìm thấy kết quả nào cho "<b>{keyword}</b>"
-            </p>
-          )}
+          {catalog.items.map((book) => <BookCard key={book.id} book={book} />)}
+          {!catalog.loading && !catalog.error && !catalog.total && <p>Không tìm thấy sách phù hợp.</p>}
         </div>
-      </main>
-    )
-  }
+      </> : <BookSection title="MỚI NHẤT" books={catalog.items} emptyText={catalog.loading ? 'Đang tải…' : catalog.error || 'Chưa có sách.'} />}
+      <nav aria-label="Phân trang sách" style={{ display: 'flex', gap: 16, alignItems: 'center', padding: 24 }}>
+        <button type="button" disabled={page === 1 || catalog.loading} onClick={() => setPage((value) => value - 1)}>Trang trước</button>
+        <span>Trang {page} / {Math.max(1, Math.ceil(catalog.total / 12))}</span>
+        <button type="button" disabled={catalog.loading || page * 12 >= catalog.total} onClick={() => setPage((value) => value + 1)}>Trang sau</button>
+      </nav>
+      {!keyword && <RankedSections />}
+    </div>
+  </main>
+}
 
+function RankedSections() {
+  const favorites = useCatalog({ sort: 'favorites', pageSize: 6 })
+  const rated = useCatalog({ sort: 'rating', pageSize: 6 })
   return (
-    <main className="Main">
-      <div className="Content">
-        <div style={{ padding: '18px 24px' }}><Link to="/stories">Khám phá truyện theo chương →</Link></div>
-        <BookSection title="MỚI NHẤT" books={books} emptyText={empty} />
-        <BookSection title="SÁCH ĐƯỢC YÊU THÍCH" books={books.slice(0, 6)} emptyText={empty} />
-        <BookSection title="SÁCH ĐỀ XUẤT" books={suggested} emptyText={empty} />
-      </div>
-      <BookSection
-        title="SÁCH ĐƯỢC ĐÁNH GIÁ CAO"
-        books={[...books].sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 6)}
-        emptyText={empty}
-      />
-    </main>
+    <>
+      {[{ title: 'SÁCH ĐƯỢC YÊU THÍCH', result: favorites }, { title: 'SÁCH ĐƯỢC ĐÁNH GIÁ CAO', result: rated }].map(({ title, result }) => <div key={title}>
+        <BookSection title={title} books={result.items} emptyText={result.loading ? 'Đang tải…' : result.error || 'Chưa có sách.'} />
+        {result.error && <button type="button" onClick={result.retry}>Tải lại {title.toLowerCase()}</button>}
+      </div>)}
+    </>
   )
 }

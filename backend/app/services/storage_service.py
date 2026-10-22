@@ -1,5 +1,7 @@
 import asyncio
+from collections import OrderedDict
 from pathlib import Path
+from threading import Lock
 
 from bs4 import BeautifulSoup
 from fastapi import UploadFile
@@ -7,6 +9,43 @@ from fastapi import UploadFile
 from app.config import settings
 from app.utils.exceptions import AppError
 from app.utils.files import ALLOWED_BOOK_EXT, ALLOWED_COVER_EXT, allowed_file, save_upload
+from app.utils.reader import html_to_text, paginate_text
+
+_reader_cache = OrderedDict()
+_reader_cache_lock = Lock()
+MAX_READER_CACHE_BYTES = 16 * 1024 * 1024
+
+
+def load_reader_content(html_path: str | None) -> tuple[str | None, tuple[str, ...]]:
+    if not html_path:
+        return None, ()
+    root = settings.static_dir.resolve()
+    path = (root.parent / html_path.lstrip('/')).resolve()
+    if not path.is_relative_to(root):
+        return None, ()
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return None, ()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    with _reader_cache_lock:
+        if key in _reader_cache:
+            _reader_cache.move_to_end(key)
+            return _reader_cache[key][0]
+    content = read_book_html(html_path)
+    result = (content, tuple(paginate_text(html_to_text(content or ''))))
+    # Account for Python's Unicode representation and object overhead.
+    import sys
+    size = sys.getsizeof(key) + sys.getsizeof(key[0]) + sys.getsizeof(result) + sys.getsizeof(content) + sys.getsizeof(result[1]) + sum(sys.getsizeof(page) for page in result[1])
+    if size <= MAX_READER_CACHE_BYTES:
+        with _reader_cache_lock:
+            for stale in [item for item in _reader_cache if item[0] == str(path) and item != key]:
+                del _reader_cache[stale]
+            _reader_cache[key] = (result, size)
+            _reader_cache.move_to_end(key)
+            while len(_reader_cache) > 64 or sum(item[1] for item in _reader_cache.values()) > MAX_READER_CACHE_BYTES:
+                _reader_cache.popitem(last=False)
+    return result
 
 
 async def save_cover(cover_file: UploadFile | None) -> str | None:
@@ -70,9 +109,10 @@ def _convert_pdf_to_html(pdf_path: Path, html_path: Path) -> None:
 def read_book_html(html_path: str | None) -> str | None:
     if not html_path:
         return None
-    html_file = settings.static_dir.parent / html_path.lstrip("/")
-    if not html_file.exists():
-        html_file = Path(settings.static_dir.parent, *html_path.lstrip("/").split("/"))
+    root = settings.static_dir.resolve()
+    html_file = (root.parent / html_path.lstrip("/")).resolve()
+    if not html_file.is_relative_to(root):
+        return None
     if not html_file.exists():
         return None
     soup = BeautifulSoup(html_file.read_text(encoding="utf-8"), "html.parser")

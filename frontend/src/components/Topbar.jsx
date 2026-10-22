@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import { useTheme } from '../context/theme-context'
 import { DEFAULT_AVATAR, mediaUrl } from '../utils/media'
 
@@ -16,8 +16,10 @@ export default function Topbar({ search, onSearchChange }) {
         <div className="Search-input">
           <input
             type="text"
+            aria-label="Tìm sách theo tên hoặc tác giả"
             className="Search-input-text"
-            placeholder="Search book, name, author..."
+            placeholder="Tìm sách, tên tác giả…"
+            maxLength={200}
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
           />

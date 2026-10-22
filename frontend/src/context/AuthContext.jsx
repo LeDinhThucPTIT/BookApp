@@ -1,18 +1,21 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as authApi from '../api/auth'
-
-const AuthContext = createContext(null)
+import { AuthContext } from './auth-context'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const expire = () => setUser(null)
+    window.addEventListener('bookapp:session-expired', expire)
+    let active = true
     authApi
       .me()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
+      .then((profile) => { if (active) setUser(profile) })
+      .catch(() => { if (active) setUser(null) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false; window.removeEventListener('bookapp:session-expired', expire) }
   }, [])
 
   const value = useMemo(
@@ -39,10 +42,4 @@ export function AuthProvider({ children }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }

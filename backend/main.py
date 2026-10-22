@@ -18,10 +18,19 @@ from app.config import settings
 from app.middlewares import register_cors, register_error_handlers, register_rate_limiting
 from app.routes import register_routes
 from app.utils.responses import success
+from app.middlewares.request_context import register_request_context
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    import logging
+    request_logger = logging.getLogger("bookapp.requests")
+    if not request_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+        request_logger.addHandler(handler)
+    request_logger.setLevel(logging.INFO)
+    request_logger.propagate = False
     settings.upload_cover_dir.mkdir(parents=True, exist_ok=True)
     settings.upload_book_dir.mkdir(parents=True, exist_ok=True)
     settings.upload_html_dir.mkdir(parents=True, exist_ok=True)
@@ -86,12 +95,31 @@ def create_app() -> FastAPI:
     )
     register_cors(app)
     register_rate_limiting(app)
+    register_request_context(app)
     register_error_handlers(app)
     register_routes(app)
 
     @app.get("/health", tags=["Health"], include_in_schema=True)
     async def health():
         return success({"status": "ok"}, "BookApp API is running")
+
+    @app.get("/health/ready", tags=["Health"])
+    async def readiness():
+        from sqlalchemy import text
+        from app.models import SessionLocal
+        from app.utils.responses import failure
+        import asyncio
+        try:
+            async with asyncio.timeout(3):
+                async with SessionLocal() as db:
+                    await db.execute(text("SELECT 1"))
+                if settings.redis_url:
+                    from redis.asyncio import Redis
+                    async with Redis.from_url(settings.redis_url) as redis:
+                        await redis.ping()
+        except Exception:
+            return failure("Dịch vụ chưa sẵn sàng.", 503, "NOT_READY")
+        return success({"status": "ready"})
 
     app.mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static")
     app.openapi = lambda: custom_openapi(app)

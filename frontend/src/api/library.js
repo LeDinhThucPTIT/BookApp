@@ -1,5 +1,13 @@
 import { api, unwrap } from './client'
 
+export async function getLibraryPage(params = {}, signal) {
+  return unwrap(await api.get('/library', { params, signal }))
+}
+
+export async function getCommentsPage(bookId, page = 1) {
+  return unwrap(await api.get(`/books/${bookId}/comments/page`, { params: { page, page_size: 20 } }))
+}
+
 export async function getProgress(bookId) {
   return unwrap(await api.get(`/books/${bookId}/progress`))
 }

@@ -22,6 +22,7 @@ def _set_token_cookie(response: Response, token: str) -> None:
         key=settings.jwt_cookie_name,
         value=token,
         httponly=True,
+        secure=settings.production,
         samesite="lax",
         max_age=settings.jwt_expire_minutes * 60,
         path="/",
@@ -62,7 +63,7 @@ async def send_otp(
 ):
     reset_token = await service.send_reset_otp(payload.email_or_phone)
     response = JSONResponse({"success": True, "message": "Mã OTP đã được gửi tới email!"})
-    response.set_cookie("reset_token", reset_token, httponly=True, samesite="lax", max_age=600)
+    response.set_cookie("reset_token", reset_token, httponly=True, secure=settings.production, samesite="lax", max_age=600)
     return response
 
 

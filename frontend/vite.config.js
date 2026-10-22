@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const backend = 'http://127.0.0.1:5000'
+const backend = process.env.BOOKAPP_API_TARGET || 'http://127.0.0.1:5000'
 
 const proxy = {
   '/api': { target: backend, changeOrigin: true },

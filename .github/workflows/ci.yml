@@ -39,7 +39,19 @@ jobs:
       MYSQL_DATABASE: bookapp
       JWT_SECRET_KEY: ci-test-only-not-for-deployment-change-this-value
       BOOKAPP_TEST_MYSQL: '1'
+      BOOKAPP_TEST_REDIS: redis://127.0.0.1:6379/0
+      CORS_ORIGINS: http://127.0.0.1:4175
+      BOOKAPP_BACKEND_COMMAND: python -m uvicorn main:app --host 127.0.0.1 --port 5017 --app-dir ../backend
     services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
       mysql:
         image: mysql:8.0
         env:
@@ -60,8 +72,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
-      - run: python -m pip install -r requirements.txt
+          cache-dependency-path: |
+            backend/requirements.lock
+            backend/requirements-dev.lock
+      - run: python -m pip install -r requirements-dev.lock
       - name: Import demo schema and data into the CI database
         run: |
           python - <<'PY'
@@ -83,4 +97,43 @@ jobs:
               connection.close()
           PY
       - run: python migrate.py
+      - name: Verify migration is repeatable
+        run: python migrate.py
       - run: python -m unittest discover -s tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7
+
+  docker-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/setup_demo.py
+      - run: docker compose config --quiet
+      - run: docker compose up --build --wait --wait-timeout 180
+      - run: curl --fail --silent http://127.0.0.1:8080/health/ready
+      - name: Show service logs after failure
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop demo services
+        if: always()
+        run: docker compose down

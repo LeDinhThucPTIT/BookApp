@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.middlewares.auth import get_current_user
 from app.models import User
-from app.schemas.common import APIResponse
+from app.schemas.common import APIResponse, Page, PaginationParams
 from app.schemas.interaction import (
     BookIdBody,
     CommentCreate,
@@ -20,6 +20,22 @@ from app.routes.deps import get_interaction_service
 from app.utils.responses import success
 
 router = APIRouter(tags=["Library"])
+
+
+@router.get("/library", response_model=APIResponse[Page[LibraryItem]])
+async def library_page(
+    pagination: PaginationParams = Depends(), search: str = Query(default="", max_length=200),
+    user: User = Depends(get_current_user), service: InteractionService = Depends(get_interaction_service),
+):
+    return success(await service.library_page(user.id, pagination.page, pagination.page_size, search))
+
+
+@router.get("/books/{book_id}/comments/page", response_model=APIResponse[Page[CommentPublic]])
+async def comments_page(
+    book_id: int, pagination: PaginationParams = Depends(),
+    user: User = Depends(get_current_user), service: InteractionService = Depends(get_interaction_service),
+):
+    return success(await service.comments_page(book_id, pagination.page, pagination.page_size))
 
 
 @router.get("/books/{book_id}/progress", response_model=APIResponse[ProgressPublic | None])

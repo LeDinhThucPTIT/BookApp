@@ -17,7 +17,7 @@ export default function BookSection({ title, books, emptyText = 'Không có sác
         <h2 className="book-section__title">{title}</h2>
       </div>
       <div className="book-section__wrapper">
-        <button type="button" className="scroll-btn left" onClick={() => scroll(-1)}>
+        <button type="button" className="scroll-btn left" aria-label={`Cuộn trái: ${title}`} onClick={() => scroll(-1)}>
           <i className="fa-solid fa-chevron-left"></i>
         </button>
         <div className="book-section__list" ref={listRef}>
@@ -27,7 +27,7 @@ export default function BookSection({ title, books, emptyText = 'Không có sác
             books.map((book) => <BookCard key={`${title}-${book.id}`} book={book} />)
           )}
         </div>
-        <button type="button" className="scroll-btn right" onClick={() => scroll(1)}>
+        <button type="button" className="scroll-btn right" aria-label={`Cuộn phải: ${title}`} onClick={() => scroll(1)}>
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>

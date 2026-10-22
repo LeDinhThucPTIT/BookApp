@@ -1,12 +1,13 @@
 from fastapi import UploadFile
-from sqlalchemy import func, select
+import asyncio
+from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Book, Rating, User
-from app.schemas.book import BookContent, BookCreateForm, BookPublic, ReaderPage, ReaderChapter
+from app.models import Book, Rating, User, Favorite
+from app.schemas.book import BookCatalog, BookContent, BookCreateForm, BookPublic, ReaderPage, ReaderChapter
 from app.models.reading_tools import Story, StoryChapter
-from app.utils.reader import html_to_text, paginate_text
-from app.services.storage_service import read_book_html, save_cover, save_pdf_and_html, remove_static_uploads
+from app.utils.reader import paginate_text
+from app.services.storage_service import load_reader_content, save_cover, save_pdf_and_html, remove_static_uploads
 from app.utils.exceptions import ForbiddenError, NotFoundError
 
 
@@ -25,6 +26,29 @@ def _rating_query():
 class BookService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+    async def catalog(self, page: int = 1, page_size: int = 12, search: str = "", sort: str = "newest") -> BookCatalog:
+        ratings = _rating_query()
+        favorites = select(Favorite.book_id, func.count(Favorite.id).label("count")).group_by(Favorite.book_id).subquery()
+        avg = func.coalesce(ratings.c.avg_rating, 0)
+        rating_count = func.coalesce(ratings.c.total_ratings, 0)
+        favorite_count = func.coalesce(favorites.c.count, 0)
+        filters = []
+        if search.strip():
+            filters.append(or_(Book.title.icontains(search.strip(), autoescape=True), Book.author.icontains(search.strip(), autoescape=True)))
+        total = await self.db.scalar(select(func.count(Book.id)).where(*filters))
+        ordering = {
+            "newest": (Book.created_at.desc(), Book.id.desc()),
+            "favorites": (favorite_count.desc(), Book.id.desc()),
+            "rating": (avg.desc(), rating_count.desc(), Book.id.desc()),
+        }[sort]
+        rows = (await self.db.execute(select(Book, avg, rating_count, favorite_count)
+            .outerjoin(ratings, ratings.c.book_id == Book.id)
+            .outerjoin(favorites, favorites.c.book_id == Book.id)
+            .where(*filters).order_by(*ordering).offset((page - 1) * page_size).limit(page_size))).all()
+        return BookCatalog(items=[BookPublic.model_validate(book).model_copy(update={
+            "avg_rating": float(avg_rating), "total_ratings": int(count), "favorite_count": int(favs),
+        }) for book, avg_rating, count, favs in rows], total=total or 0, page=page, page_size=page_size)
 
     async def list_books(self, uploaded_by: int | None = None) -> list[BookPublic]:
         ratings = _rating_query()
@@ -92,8 +116,8 @@ class BookService:
                 content = await self.db.scalar(select(StoryChapter.content).where(StoryChapter.id == selected.id))
                 pages = [ReaderPage(text=text, chapter_id=selected.id, chapter_title=selected.title, chapter_number=selected.number) for text in paginate_text(content)]
             return BookContent(**public.model_dump(), pages=pages, is_story=True, chapters=chapters, page_offset=selected.start_page if selected else 0, total_pages=offset)
-        content = read_book_html(public.html_path)
-        pages = [ReaderPage(text=text) for text in paginate_text(html_to_text(content or ""))]
+        content, texts = await asyncio.to_thread(load_reader_content, public.html_path)
+        pages = [ReaderPage(text=text) for text in texts]
         return BookContent(**public.model_dump(), content=content, pages=pages, total_pages=len(pages))
 
     async def upload_book(

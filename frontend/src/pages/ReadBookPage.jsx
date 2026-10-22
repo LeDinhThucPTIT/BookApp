@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getBookContent } from '../api/books'
-import { getSave, saveHistory, toggleSave, getProgress, saveProgress } from '../api/library'
-import { errorMessage, getToken } from '../api/client'
-import { useAuth } from '../context/AuthContext'
+import { getSave, saveHistory, toggleSave, getProgress } from '../api/library'
+import { errorMessage } from '../api/client'
+import { useReaderProgress } from '../hooks/useReaderProgress'
+import { useAuth } from '../context/auth-context'
 import { useTheme } from '../context/theme-context'
 import { paginateText, restorePage, restoreReadingPage, validProgress, expandReaderBook, chooseReadingProgress } from '../utils/reader'
 import Sidebar from '../components/Sidebar'
@@ -45,16 +46,11 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [actionError, setActionError] = useState('')
-  const [syncStatus, setSyncStatus] = useState('')
   const [savingBook, setSavingBook] = useState(false)
   const [reload, setReload] = useState(0)
-  const [syncRetry, setSyncRetry] = useState(0)
-  const [syncConflict, setSyncConflict] = useState(null)
   const [chapterLoading, setChapterLoading] = useState(false)
   const [chapterError, setChapterError] = useState('')
   const [chapterRetry, setChapterRetry] = useState(0)
-  const latestProgress = useRef(null)
-  const saveQueue = useRef(Promise.resolve())
   const [chapterOpen, setChapterOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -91,17 +87,17 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
   }
 
   // Tải nội dung sách và trạng thái lưu
+
+  const pages = useMemo(() => book?.pages ? book.pages.map((item) => item.text) : splitPages(book?.content || ''), [book])
+  const total = pages.length || 1
+  const chapters = useMemo(() => (book?.pages || []).flatMap((item, index, list) => item.chapter_id && (index === 0 || list[index - 1].chapter_id !== item.chapter_id)
+    ? [{ ...item, page: index }] : []), [book])
+  const currentChapter = book?.pages?.[page]
+  const chapterIndex = chapters.findIndex((chapter) => chapter.chapter_id === currentChapter?.chapter_id)
+  const { syncStatus, syncConflict, setSyncRetry, initializeProgress, useServerPosition, keepLocalPosition } = useReaderProgress({ book, bookId, page, setPage, pages, total, loading, progressKey, contentContainerRef })
+
   useEffect(() => {
     let active = true
-    setLoading(true)
-    setLoadError('')
-    setActionError('')
-    setResumeToast(null)
-    setBook(null)
-    setPage(0)
-    setIsSaved(false)
-    setAiOpen(false)
-    latestProgress.current = null
     const load = async () => {
       try {
         const [initialContent, remoteResult] = await Promise.all([
@@ -121,10 +117,9 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
           content = expandReaderBook(await getBookContent(bookId, content.pages[restored].chapter_id), content)
         }
         if (!active) return
-        latestProgress.current = progress
+        initializeProgress(progress, remoteResult.failed ? 'offline' : 'saved')
         setPage(restored)
         setBook(content)
-        setSyncStatus(remoteResult.failed ? 'offline' : 'saved')
         if (restored > 0) setResumeToast({ page: restored + 1, total: count, percentage: Math.round(((restored + 1) / count) * 100) })
         saveHistory(bookId).catch(() => {})
       } catch (err) {
@@ -138,14 +133,8 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
       .then((res) => { if (active) setIsSaved(Boolean(res?.saved)) })
       .catch(() => {})
     return () => { active = false }
-  }, [bookId, progressKey, reload, requestedChapter])
+  }, [bookId, progressKey, reload, requestedChapter, initializeProgress])
 
-  const pages = useMemo(() => book?.pages ? book.pages.map((item) => item.text) : splitPages(book?.content || ''), [book])
-  const total = pages.length || 1
-  const chapters = useMemo(() => (book?.pages || []).flatMap((item, index, list) => item.chapter_id && (index === 0 || list[index - 1].chapter_id !== item.chapter_id)
-    ? [{ ...item, page: index }] : []), [book])
-  const currentChapter = book?.pages?.[page]
-  const chapterIndex = chapters.findIndex((chapter) => chapter.chapter_id === currentChapter?.chapter_id)
 
   // Load only the selected chapter, then warm the next chapter in the background.
   useEffect(() => {
@@ -182,83 +171,6 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
   }, [resumeToast])
 
   // Lưu tiến độ đọc dở mỗi khi chuyển trang
-  useEffect(() => {
-    if (!book || loading || !pages.length || !pages[page]) return
-    const previous = latestProgress.current
-    const chapter = book.pages?.[page]
-    const chapterStart = chapter?.chapter_id ? book.pages.findIndex((item) => item.chapter_id === chapter.chapter_id) : 0
-    const changed = !previous || previous.page !== page || previous.total_pages !== total || previous.chapter_id !== (chapter?.chapter_id ?? null)
-    const progress = changed
-      ? { page, total_pages: total, chapter_id: chapter?.chapter_id ?? null, chapter_page: chapter?.chapter_id ? page - chapterStart : null, updated_at_ms: Date.now(), base_revision: previous?.base_revision ?? previous?.revision ?? 0, mutation_id: crypto.randomUUID(), pending: true }
-      : previous
-    latestProgress.current = progress
-    let locallySaved = false
-    try {
-      localStorage.setItem(progressKey, JSON.stringify(progress))
-      locallySaved = true
-    } catch { /* Report persistence failure below if the server also fails. */ }
-    if (syncConflict) return
-    if (!changed && !progress.pending) return
-    setSyncStatus('saving')
-    let active = true
-    let submittedRevision = progress.base_revision ?? 0
-    const task = saveQueue.current.catch(() => {}).then(() => {
-      if (latestProgress.current?.mutation_id !== progress.mutation_id) return null
-      if (!latestProgress.current.pending) return null
-      submittedRevision = latestProgress.current.base_revision ?? 0
-      return saveProgress(bookId, { ...progress, base_revision: submittedRevision })
-    })
-    saveQueue.current = task
-    task
-      .then((saved) => {
-        if (!saved) { if (active && !latestProgress.current?.pending) setSyncStatus('saved'); return }
-        const normalized = { ...saved, base_revision: saved.revision, pending: false }
-        if (latestProgress.current?.mutation_id === progress.mutation_id) {
-          latestProgress.current = normalized
-          try { localStorage.setItem(progressKey, JSON.stringify(normalized)) } catch { /* server saved */ }
-        } else if (latestProgress.current?.base_revision === submittedRevision) {
-          // A local page change queued while this request was in flight.
-          latestProgress.current = { ...latestProgress.current, base_revision: saved.revision }
-          try { localStorage.setItem(progressKey, JSON.stringify(latestProgress.current)) } catch { /* retry remains in memory */ }
-        }
-        if (active) setSyncStatus('saved')
-      })
-      .catch((err) => {
-        if (!active) return
-        if (err?.response?.data?.error_code === 'PROGRESS_CONFLICT') {
-          setSyncConflict(err.response.data.details)
-          setSyncStatus('conflict')
-        } else setSyncStatus(locallySaved ? 'offline' : 'failed')
-      })
-
-    // Cuộn lên đầu trang đọc mỗi khi đổi trang
-    if (contentContainerRef.current) {
-      contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-    return () => { active = false }
-  }, [page, total, book, bookId, progressKey, loading, pages, syncRetry, syncConflict])
-
-  useEffect(() => {
-    const retry = () => setSyncRetry((value) => value + 1)
-    const flush = () => {
-      const progress = latestProgress.current
-      if (!progress?.pending || syncConflict) return
-      const token = getToken()
-      fetch(`/api/v1/books/${bookId}/progress`, {
-        method: 'PUT', credentials: 'include', keepalive: true,
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(progress),
-      }).catch(() => {})
-    }
-    window.addEventListener('online', retry)
-    window.addEventListener('pagehide', flush)
-    return () => {
-      window.removeEventListener('online', retry)
-      window.removeEventListener('pagehide', flush)
-    }
-  }, [bookId, syncConflict])
-
-  // Điều hướng bằng phím mũi tên & phím tắt
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -552,18 +464,8 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
             {syncStatus === 'failed' && 'Chưa lưu được vị trí đọc. Vui lòng thử lại.'}
             {syncStatus === 'conflict' && 'Vị trí đọc đã thay đổi ở một phiên khác.'}
             {syncConflict && <>
-              <button type="button" onClick={() => {
-                latestProgress.current = { ...syncConflict, base_revision: syncConflict.revision, pending: false }
-                try { localStorage.setItem(progressKey, JSON.stringify(latestProgress.current)) } catch { /* server saved */ }
-                setPage(restoreReadingPage(syncConflict, book.pages))
-                setSyncConflict(null)
-                setSyncStatus('saved')
-              }}>Dùng vị trí đã đồng bộ</button>
-              <button type="button" onClick={() => {
-                latestProgress.current = { ...latestProgress.current, base_revision: syncConflict.revision, mutation_id: crypto.randomUUID(), pending: true }
-                setSyncConflict(null)
-                setSyncRetry((value) => value + 1)
-              }}>Giữ vị trí đang đọc</button>
+              <button type="button" onClick={useServerPosition}>Dùng vị trí đã đồng bộ</button>
+              <button type="button" onClick={keepLocalPosition}>Giữ vị trí đang đọc</button>
             </>}
             {['offline', 'failed'].includes(syncStatus) && <button type="button" onClick={() => setSyncRetry((value) => value + 1)}>Thử đồng bộ lại</button>}
           </div>
@@ -599,7 +501,7 @@ function ReaderSession({ bookId, userId, requestedChapter }) {
               {loading ? (
                 <div className="reader-loading" role="status"><div className="loading-spinner"></div><p>Đang tải nội dung sách...</p></div>
               ) : loadError ? (
-                <div className="reader-loading" role="alert"><p>{loadError}</p><button type="button" className="nav-btn" onClick={() => setReload((value) => value + 1)}>Thử lại</button></div>
+                <div className="reader-loading" role="alert"><p>{loadError}</p><button type="button" className="nav-btn" onClick={() => { setLoading(true); setLoadError(''); setReload((value) => value + 1) }}>Thử lại</button></div>
               ) : pages.length && !pages[page] ? (
                 <div className="reader-loading" role={chapterError ? 'alert' : 'status'}><p>{chapterError || (chapterLoading ? 'Đang tải chương…' : 'Đang chuẩn bị chương…')}</p>{chapterError && <button type="button" onClick={() => setChapterRetry((value) => value + 1)}>Thử tải lại chương</button>}</div>
               ) : pages.length ? (
